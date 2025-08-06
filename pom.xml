@@ -1,0 +1,66 @@
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.usiv</groupId>
+    <artifactId>pdf-signer-war</artifactId>
+    <version>1.0</version>
+    <packaging>war</packaging>
+
+    <properties>
+        <java.version>17</java.version>
+        <spring-boot.version>3.1.5</spring-boot.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itext7-core</artifactId>
+            <version>7.2.5</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15to18</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <dependency>
+		  <groupId>org.bouncycastle</groupId>
+		  <artifactId>bcprov-jdk15to18</artifactId>
+		  <version>1.77</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.bouncycastle</groupId>
+		  <artifactId>bcpkix-jdk15to18</artifactId>
+		  <version>1.77</version>
+		</dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <packaging>war</packaging>
+                </configuration>
+            </plugin>
+            <plugin>
+		      <groupId>org.apache.maven.plugins</groupId>
+		      <artifactId>maven-compiler-plugin</artifactId>
+		      <version>3.11.0</version>
+		      <configuration>
+		        <source>17</source>
+		        <target>17</target>
+		      </configuration>
+		    </plugin>
+        </plugins>
+    </build>
+</project>
