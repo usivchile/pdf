@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,7 +80,7 @@ public class PdfController {
             }
 
             // Verificar que el token es de tipo descarga
-            String tokenType = jwtTokenProvider.getTokenTypeFromToken(token);
+            String tokenType = jwtTokenProvider.getTokenType(token);
             if (!"download".equals(tokenType)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Token no autorizado para descarga"));
@@ -177,7 +177,17 @@ public class PdfController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> manualCleanup() {
         try {
-            Map<String, Object> result = fileManagementService.performCleanup();
+            fileManagementService.manualCleanup();
+            FileManagementService.CleanupStats stats = fileManagementService.getCleanupStats();
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", "success");
+            result.put("message", "Limpieza ejecutada correctamente");
+            result.put("totalFiles", stats.getTotalFiles());
+            result.put("totalSizeBytes", stats.getTotalSizeBytes());
+            result.put("trashFiles", stats.getTrashFiles());
+            result.put("trashSizeBytes", stats.getTrashSizeBytes());
+            
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

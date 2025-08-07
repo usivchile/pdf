@@ -232,6 +232,33 @@ public class FileManagementService {
         performCleanup();
     }
 
+    public boolean fileExists(String relativePath) {
+        try {
+            Path fullPath = Paths.get(basePath, relativePath);
+            return Files.exists(fullPath) && Files.isRegularFile(fullPath);
+        } catch (Exception e) {
+            logger.error("Error checking file existence: {}", relativePath, e);
+            return false;
+        }
+    }
+
+    public boolean deleteFile(String relativePath) {
+        try {
+            Path fullPath = Paths.get(basePath, relativePath);
+            if (Files.exists(fullPath)) {
+                Files.delete(fullPath);
+                logger.info("File deleted: {}", relativePath);
+                return true;
+            } else {
+                logger.warn("File not found for deletion: {}", relativePath);
+                return false;
+            }
+        } catch (IOException e) {
+            logger.error("Error deleting file: {}", relativePath, e);
+            return false;
+        }
+    }
+
     public CleanupStats getCleanupStats() {
         try {
             Path baseDir = Paths.get(basePath);

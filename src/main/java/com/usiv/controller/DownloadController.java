@@ -49,7 +49,7 @@ public class DownloadController {
             }
 
             // Verificar que el token es de tipo descarga
-            String tokenType = jwtTokenProvider.getTokenTypeFromToken(token);
+            String tokenType = jwtTokenProvider.getTokenType(token);
             if (!"download".equals(tokenType)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -129,7 +129,7 @@ public class DownloadController {
             }
 
             // Verificar que el token es de tipo descarga
-            String tokenType = jwtTokenProvider.getTokenTypeFromToken(token);
+            String tokenType = jwtTokenProvider.getTokenType(token);
             if (!"download".equals(tokenType)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of(

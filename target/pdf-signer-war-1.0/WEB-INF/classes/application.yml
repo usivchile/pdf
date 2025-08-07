@@ -1,0 +1,106 @@
+# Configuración del servidor
+server:
+  port: 8080
+  servlet:
+    context-path: /usiv-pdf-api
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
+
+# Configuración de Spring
+spring:
+  application:
+    name: usiv-pdf-service
+  profiles:
+    active: production
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Configuración de logging
+logging:
+  level:
+    com.usiv: INFO
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/usiv-pdf-service.log
+
+# Configuración JWT
+jwt:
+  secret: "usiv-pdf-service-secret-key-2024-very-secure-and-long-key-for-production"
+  expiration: 86400000 # 24 horas en milisegundos
+  issuer: "USIV-PDF-SERVICE"
+  audience: "USIV-CLIENTS"
+
+# Configuración de archivos PDF
+pdf:
+  storage:
+    base-path: "C:/usiv-documents" # Ruta base configurable
+    download-base-url: "https://your-domain.com/usiv-pdf-api/download" # URL base para descargas
+    create-directories: true
+  cleanup:
+    enabled: true
+    retention-months: 6 # Archivos más antiguos van a papelera
+    trash-retention-days: 30 # Días en papelera antes de eliminación
+    schedule-cron: "0 0 2 * * ?" # Ejecutar a las 2 AM todos los días
+    trash-folder-name: "_trash"
+
+# Configuración de firma digital
+signer:
+  p12:
+    path: "certs/demo.p12"
+    password: "123456"
+  reason: "Firmado digitalmente por USIV"
+  location: "Santiago, Chile"
+  contact-info: "soporte@usiv.cl"
+
+# Configuración de QR
+qr:
+  size: 150 # Tamaño del QR en píxeles
+  margin: 1
+  error-correction: "M" # L, M, Q, H
+
+# Configuración de seguridad
+security:
+  cors:
+    allowed-origins:
+      - "http://localhost:3000"
+      - "https://your-frontend-domain.com"
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+  rate-limiting:
+    enabled: true
+    requests-per-minute: 60
+
+# Configuración de actuator (monitoreo)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+# Información de la aplicación
+info:
+  app:
+    name: USIV PDF Service
+    description: Servicio de generación y firma de PDFs con gestión de archivos
+    version: 1.0.0
+    contact:
+      email: soporte@usiv.cl
+      url: https://usiv.cl

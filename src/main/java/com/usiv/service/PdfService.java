@@ -77,7 +77,7 @@ public class PdfService {
                 filename, 
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
                 downloadUrlWithToken);
-            String qrCodeBase64 = qrCodeService.generateQrCodeAsBase64(qrText);
+            String qrCodeBase64 = qrCodeService.generateQrCodeBase64(qrText);
             
             // Generar PDF en memoria con QR code
             ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
@@ -101,7 +101,7 @@ public class PdfService {
             response.setQrCode(qrCodeBase64);
             response.setGeneratedAt(LocalDateTime.now());
             response.setExpiresAt(LocalDateTime.now().plusDays(30)); // Token válido por 30 días
-            response.setFileSize(signedPdf.length);
+            response.setFileSizeBytes(signedPdf.length);
             response.setChecksum(checksum);
             
             return response;
