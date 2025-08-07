@@ -593,6 +593,73 @@ sudo ./update-local.sh
 
 **Tiempo estimado:** 3-5 minutos
 
+## 🔧 Solución de Problemas
+
+Si encuentras errores durante la compilación o despliegue:
+
+### Diagnóstico Automático
+
+```bash
+# Ejecutar diagnóstico completo del sistema
+./troubleshoot.sh
+```
+
+Este script:
+- ✅ Verifica versiones de Java y Maven
+- ✅ Comprueba conectividad a repositorios
+- ✅ Limpia cachés corruptos
+- ✅ Valida configuración del proyecto
+- ✅ Intenta compilación de prueba
+- ✅ Proporciona recomendaciones específicas
+
+### Errores Comunes
+
+**Error de XStream/Maven War Plugin:**
+```
+Error injecting: org.apache.maven.plugin.war.WarMojo
+com.google.inject.ProvisionException: Unable to provision
+```
+
+**Solución:** Ya incluida en el proyecto - el `pom.xml` tiene la versión correcta del `maven-war-plugin` (3.4.0) compatible con Java 17.
+
+**Error de Java Version:**
+```
+Unsupported class file major version
+```
+
+**Solución:**
+```bash
+# Verificar versión de Java
+java -version
+
+# Si no es Java 17+, instalar:
+sudo yum install java-17-openjdk-devel
+
+# Configurar JAVA_HOME
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+```
+
+**Error de Dependencias:**
+```
+Could not resolve dependencies
+```
+
+**Solución:**
+```bash
+# Limpiar caché y recompilar
+mvn clean install -U
+
+# O usar el script de troubleshooting
+./troubleshoot.sh
+```
+
+### Ayuda Interactiva
+
+```bash
+# Ver todas las opciones disponibles
+./help.sh
+```
+
 ## Scripts de Instalación y Configuración
 
 Se incluyen varios scripts automatizados para facilitar el despliegue:
@@ -613,6 +680,8 @@ Se incluyen varios scripts automatizados para facilitar el despliegue:
 - `install-vps.sh`: Instalación base de Java 17, Tomcat 10 y configuraciones iniciales
 - `configure-nginx.sh`: Configuración de Nginx como proxy reverso con SSL
 - `security-hardening.sh`: Endurecimiento de seguridad del sistema y aplicación
+- `troubleshoot.sh`: Diagnóstico y solución de problemas de Maven/Java
+- `help.sh`: Ayuda interactiva con todas las opciones disponibles
 
 ### Uso Recomendado
 

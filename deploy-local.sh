@@ -204,10 +204,11 @@ main_deployment() {
     log "Compilando proyecto con Maven..."
     
     # Compilar y generar WAR
-    mvn clean package -DskipTests
+    mvn clean package -DskipTests -Dmaven.compiler.source=17 -Dmaven.compiler.target=17
     
     if [ $? -ne 0 ]; then
         error "Error al compilar el proyecto"
+        error "Verifica que todas las dependencias estén disponibles"
     fi
     
     # Verificar que se generó el WAR
