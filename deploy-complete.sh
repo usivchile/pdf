@@ -56,6 +56,8 @@ EMAIL="admin@usiv.cl"  # Cambiar por email real
 WAR_FILE="pdf-signer-war-1.0.war"
 DEPLOY_DIR="/opt/pdf-validator-deploy"
 LOG_FILE="/var/log/pdf-validator-deploy.log"
+GIT_REPO="https://github.com/tu-usuario/pdf-validator-api.git"  # Cambiar por tu repositorio
+GIT_BRANCH="main"
 
 # Crear directorio de despliegue
 mkdir -p $DEPLOY_DIR
