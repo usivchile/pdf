@@ -484,19 +484,147 @@ find $BACKUP_DIR -name "*.tar.gz" -mtime +30 -delete
 - **Sistema:** `/var/log/messages`
 - **Nginx:** `/var/log/nginx/error.log`
 
+## ⚙️ Configuración Inicial (Antes del Primer Despliegue)
+
+Antes de desplegar, configura tu repositorio Git en todos los scripts:
+
+```bash
+# 1. Clonar o descargar el proyecto
+git clone https://github.com/tu-usuario/pdf-validator-api.git
+cd pdf-validator-api
+
+# 2. Ejecutar configurador de Git
+chmod +x configure-git-repo.sh
+./configure-git-repo.sh
+
+# 3. Subir cambios a tu repositorio
+git add .
+git commit -m "Configurar URLs de repositorio Git"
+git push
+```
+
+Este script te permitirá configurar:
+- ✅ URL de tu repositorio Git
+- ✅ Rama a usar para despliegue
+- ✅ Dominio de tu aplicación
+- ✅ Email para certificados SSL
+
+## 🚀 Despliegue Automático desde Git (Recomendado)
+
+Después de configurar tu repositorio, despliega automáticamente:
+
+```bash
+# 1. Conectar al VPS
+ssh root@tu-servidor
+
+# 2. Descargar y ejecutar script de despliegue desde Git
+wget https://raw.githubusercontent.com/tu-usuario/tu-repositorio/main/deploy-from-git.sh
+chmod +x deploy-from-git.sh
+sudo ./deploy-from-git.sh
+```
+
+Este script automáticamente:
+- ✅ Descarga el proyecto desde tu repositorio Git
+- ✅ Compila la aplicación con Maven
+- ✅ Instala Java 17 y Tomcat 10
+- ✅ Configura Nginx con SSL (Let's Encrypt)
+- ✅ Aplica configuraciones de seguridad
+- ✅ Despliega la aplicación
+- ✅ Configura monitoreo y backups
+
+**Tiempo estimado:** 15-20 minutos
+
+## 🔄 Actualización desde Git
+
+Para actualizar una aplicación ya desplegada con la última versión desde Git:
+
+```bash
+# Conectar al VPS
+ssh root@tu-servidor
+
+# Descargar y ejecutar script de actualización
+wget https://raw.githubusercontent.com/tu-usuario/pdf-validator-api/main/update-from-git.sh
+chmod +x update-from-git.sh
+sudo ./update-from-git.sh
+```
+
+Este script automáticamente:
+- ✅ Crea un backup de la versión actual
+- ✅ Descarga la última versión desde Git
+- ✅ Compila la nueva versión
+- ✅ Despliega sin interrumpir otros servicios
+- ✅ Verifica que todo funcione correctamente
+- ✅ Permite rollback automático en caso de error
+
+**Tiempo estimado:** 5-10 minutos
+
+## 🏠 Despliegue Local (desde directorio clonado)
+
+Si ya tienes el proyecto clonado en tu VPS, puedes desplegarlo directamente:
+
+```bash
+# 1. Ir al directorio del proyecto en el VPS
+cd /opt/pdf-signer/pdf
+
+# 2. Ejecutar despliegue local
+sudo ./deploy-local.sh
+```
+
+Este método es ideal cuando:
+- ✅ Ya tienes el proyecto clonado en el VPS
+- ✅ Quieres hacer cambios locales antes del despliegue
+- ✅ Tienes conectividad limitada para descargar desde Git
+- ✅ Prefieres control total sobre el código fuente
+
+### Actualización Local
+
+Para actualizar una aplicación ya desplegada desde el directorio local:
+
+```bash
+# Desde el directorio del proyecto
+cd /opt/pdf-signer/pdf
+
+# Actualizar código (opcional)
+git pull
+
+# Ejecutar actualización
+sudo ./update-local.sh
+```
+
+**Tiempo estimado:** 3-5 minutos
+
 ## Scripts de Instalación y Configuración
 
 Se incluyen varios scripts automatizados para facilitar el despliegue:
 
 ### Scripts Principales
-- `deploy-complete.sh`: **Script principal** - Ejecuta todo el proceso de despliegue automáticamente
+
+**Scripts para Despliegue desde Git:**
+- `configure-git-repo.sh`: **Script de configuración** - Configura URLs de Git en todos los scripts automáticamente
+- `deploy-from-git.sh`: **Script principal** - Descarga, compila y despliega desde Git automáticamente
+- `update-from-git.sh`: **Script de actualización** - Actualiza la aplicación desde Git sin reinstalar servicios
+
+**Scripts para Despliegue Local (desde directorio clonado):**
+- `deploy-local.sh`: **Script de despliegue local** - Despliega desde el directorio actual del proyecto
+- `update-local.sh`: **Script de actualización local** - Actualiza desde el directorio actual sin reinstalar servicios
+
+**Scripts de Soporte:**
+- `deploy-complete.sh`: Script de despliegue con archivos locales precompilados
 - `install-vps.sh`: Instalación base de Java 17, Tomcat 10 y configuraciones iniciales
 - `configure-nginx.sh`: Configuración de Nginx como proxy reverso con SSL
 - `security-hardening.sh`: Endurecimiento de seguridad del sistema y aplicación
 
 ### Uso Recomendado
 
-**Opción 1: Despliegue Automático Completo (Recomendado)**
+**Opción 1: Despliegue desde Git (Recomendado)**
+```bash
+# Descargar y ejecutar script de despliegue desde Git
+wget https://raw.githubusercontent.com/tu-usuario/pdf-validator-api/main/deploy-from-git.sh
+chmod +x deploy-from-git.sh
+sudo ./deploy-from-git.sh
+```
+
+**Opción 2: Despliegue con Archivos Locales**
 ```bash
 # Copiar todos los archivos al servidor
 scp *.sh pdf-signer-war-1.0.war root@tu-servidor:/opt/pdf-validator-deploy/
@@ -509,7 +637,7 @@ chmod +x deploy-complete.sh
 ./deploy-complete.sh
 ```
 
-**Opción 2: Despliegue Manual por Pasos**
+**Opción 3: Despliegue Manual por Pasos**
 ```bash
 # 1. Instalación base
 chmod +x install-vps.sh

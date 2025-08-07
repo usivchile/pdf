@@ -19,16 +19,40 @@ Esta guía te permitirá desplegar la API PDF Validator en tu VPS Hostinger (Cen
 - `security-hardening.sh` (seguridad)
 - `test-client.html` (cliente de pruebas)
 
-## Despliegue Automático (Recomendado)
+## 🚀 Despliegue Automático desde Git
 
-### Paso 1: Copiar archivos al servidor
+### Paso 1: Conectar al VPS
+```bash
+ssh root@tu-ip-del-vps
+```
+
+### Paso 2: Ejecutar Script de Despliegue desde Git
+```bash
+# Descargar script de despliegue desde Git
+wget https://raw.githubusercontent.com/tu-usuario/pdf-validator-api/main/deploy-from-git.sh
+
+# Dar permisos de ejecución
+chmod +x deploy-from-git.sh
+
+# Ejecutar despliegue automático desde Git
+sudo ./deploy-from-git.sh
+```
+
+**⏱️ Tiempo estimado:** 15-20 minutos
+
+### Despliegue Alternativo (con archivos precompilados)
+```bash
+# Si prefieres usar archivos ya compilados
+wget https://raw.githubusercontent.com/tu-usuario/pdf-validator-api/main/deploy-complete.sh
+chmod +x deploy-complete.sh
+sudo ./deploy-complete.sh
+```
+
+### Método Manual: Copiar archivos al servidor
 ```bash
 # Desde tu máquina local, copiar todos los archivos
 scp *.sh pdf-signer-war-1.0.war test-client.html root@TU_IP_VPS:/opt/pdf-validator-deploy/
-```
 
-### Paso 2: Ejecutar despliegue automático
-```bash
 # Conectar al VPS
 ssh root@TU_IP_VPS
 

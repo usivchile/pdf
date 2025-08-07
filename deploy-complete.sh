@@ -141,23 +141,80 @@ main_deployment() {
         exit 0
     fi
     
-    # 3. Verificar si el archivo WAR existe
-    if [ ! -f "$WAR_FILE" ]; then
-        warn "Archivo WAR no encontrado: $WAR_FILE"
-        echo "Por favor, copia el archivo $WAR_FILE a este directorio: $DEPLOY_DIR"
-        read -p "Presiona Enter cuando hayas copiado el archivo WAR..."
-        
-        if [ ! -f "$WAR_FILE" ]; then
-            error "Archivo WAR aún no encontrado. Abortando despliegue."
-        fi
+    # 3. Descargar proyecto desde Git y compilar
+    log "Descargando proyecto desde Git..."
+    
+    # Instalar Git si no está disponible
+    if ! command_exists git; then
+        log "Instalando Git..."
+        dnf install git -y
     fi
     
-    success "Archivo WAR encontrado: $WAR_FILE"
+    # Instalar Maven si no está disponible
+    if ! command_exists mvn; then
+        log "Instalando Maven..."
+        dnf install maven -y
+    fi
     
-    # 4. Ejecutar script de instalación VPS
+    # Clonar o actualizar repositorio
+    if [ -d "pdf-validator-source" ]; then
+        log "Actualizando repositorio existente..."
+        cd pdf-validator-source
+        git pull origin $GIT_BRANCH
+        cd ..
+    else
+        log "Clonando repositorio..."
+        git clone -b $GIT_BRANCH $GIT_REPO pdf-validator-source
+    fi
+    
+    # Compilar proyecto
+    log "Compilando proyecto con Maven..."
+    cd pdf-validator-source
+    
+    # Verificar que existe pom.xml
+    if [ ! -f "pom.xml" ]; then
+        error "No se encontró pom.xml en el repositorio"
+    fi
+    
+    # Compilar y generar WAR
+    mvn clean package -DskipTests
+    
+    if [ $? -ne 0 ]; then
+        error "Error al compilar el proyecto"
+    fi
+    
+    # Verificar que se generó el WAR
+    if [ ! -f "target/$WAR_FILE" ]; then
+        error "No se generó el archivo WAR: target/$WAR_FILE"
+    fi
+    
+    # Copiar WAR al directorio de despliegue
+    cp target/$WAR_FILE $DEPLOY_DIR/
+    
+    # Copiar cliente de pruebas
+    if [ -f "test-client.html" ]; then
+        cp test-client.html $DEPLOY_DIR/
+    fi
+    
+    cd $DEPLOY_DIR
+    success "Proyecto compilado y WAR generado: $WAR_FILE"
+    
+    # 4. Copiar scripts desde el repositorio y ejecutar instalación VPS
+    log "Copiando scripts de despliegue desde el repositorio..."
+    
+    # Copiar scripts necesarios desde el repositorio
+    cp pdf-validator-source/install-vps.sh .
+    cp pdf-validator-source/configure-nginx.sh .
+    cp pdf-validator-source/security-hardening.sh .
+    cp pdf-validator-source/deploy-complete.sh .
+    cp pdf-validator-source/deploy-from-git.sh .
+    cp pdf-validator-source/update-from-git.sh .
+    
+    # Hacer ejecutables todos los scripts
+    chmod +x install-vps.sh configure-nginx.sh security-hardening.sh
+    
     log "Paso 1/4: Instalando componentes base (Java, Tomcat)..."
     if [ -f "install-vps.sh" ]; then
-        chmod +x install-vps.sh
         ./install-vps.sh
         success "Instalación base completada"
     else
@@ -206,23 +263,13 @@ main_deployment() {
     
     # 6. Configurar Nginx
     log "Paso 3/4: Configurando Nginx y SSL..."
-    if [ -f "configure-nginx.sh" ]; then
-        chmod +x configure-nginx.sh
-        ./configure-nginx.sh
-        success "Nginx configurado"
-    else
-        error "Script configure-nginx.sh no encontrado"
-    fi
+    ./configure-nginx.sh
+    success "Nginx configurado"
     
     # 7. Aplicar endurecimiento de seguridad
     log "Paso 4/4: Aplicando configuraciones de seguridad..."
-    if [ -f "security-hardening.sh" ]; then
-        chmod +x security-hardening.sh
-        ./security-hardening.sh
-        success "Seguridad configurada"
-    else
-        error "Script security-hardening.sh no encontrado"
-    fi
+    ./security-hardening.sh
+    success "Seguridad configurada"
     
     # 8. Verificaciones finales
     log "Realizando verificaciones finales..."
