@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para corregir problemas de SSL en Nginx
-# Genera certificados autofirmados temporales y configura Nginx
+# Configuración simple sin rate limiting para evitar conflictos
 
 set -e
 
@@ -33,7 +33,6 @@ fi
 
 # Variables
 DOMAIN="validador.usiv.cl"
-SSL_DIR="/etc/nginx/ssl"
 NGINX_CONF="/etc/nginx/conf.d/$DOMAIN.conf"
 
 echo -e "${BLUE}"
@@ -44,31 +43,20 @@ echo -e "${NC}"
 
 log "Iniciando corrección de problemas SSL..."
 
-# 1. Crear directorio SSL si no existe
-log "Creando directorio SSL..."
-mkdir -p "$SSL_DIR"
-chmod 755 "$SSL_DIR"
+# 1. Detener Nginx para limpiar configuración
+log "Deteniendo Nginx..."
+systemctl stop nginx || true
 
-# 2. Generar certificados autofirmados temporales
-log "Generando certificados autofirmados temporales..."
-if [ ! -f "$SSL_DIR/nginx-selfsigned.crt" ] || [ ! -f "$SSL_DIR/nginx-selfsigned.key" ]; then
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout "$SSL_DIR/nginx-selfsigned.key" \
-        -out "$SSL_DIR/nginx-selfsigned.crt" \
-        -subj "/C=CL/ST=Santiago/L=Santiago/O=USIV/OU=IT/CN=$DOMAIN"
-    
-    chmod 600 "$SSL_DIR/nginx-selfsigned.key"
-    chmod 644 "$SSL_DIR/nginx-selfsigned.crt"
-    log "Certificados autofirmados creados"
-else
-    log "Certificados autofirmados ya existen"
-fi
+# 2. Limpiar configuraciones conflictivas
+log "Limpiando configuraciones conflictivas..."
+rm -f /etc/nginx/conf.d/*.conf
+rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 
-# 3. Crear configuración de Nginx temporal (sin SSL)
-log "Creando configuración temporal de Nginx..."
+# 3. Crear configuración simple sin SSL
+log "Creando configuración simple sin SSL..."
 cat > "$NGINX_CONF" << 'EOF'
-# Configuración temporal de Nginx para PDF Validator API
-# Redirección HTTP a HTTPS deshabilitada temporalmente
+# Configuración simple de Nginx para PDF Validator API
+# Sin SSL, sin rate limiting para evitar conflictos
 
 server {
     listen 80;
@@ -78,15 +66,16 @@ server {
     access_log /var/log/nginx/validador.usiv.cl.access.log;
     error_log /var/log/nginx/validador.usiv.cl.error.log;
     
-    # Rate limiting
-    limit_req zone=api burst=20 nodelay;
-    limit_req zone=general burst=50 nodelay;
-    
-    # Security headers
+    # Headers básicos de seguridad
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    
+    # Let's Encrypt challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+        allow all;
+    }
     
     # Proxy to Tomcat
     location / {
@@ -108,10 +97,8 @@ server {
         proxy_busy_buffers_size 8k;
     }
     
-    # API endpoints con rate limiting específico
+    # API endpoints
     location /api/ {
-        limit_req zone=api burst=10 nodelay;
-        
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -130,17 +117,18 @@ server {
         expires 1d;
         add_header Cache-Control "public, immutable";
     }
-    
-    # Let's Encrypt challenge
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
 }
 EOF
 
-log "Configuración temporal creada"
+log "Configuración simple creada"
 
-# 4. Verificar configuración de Nginx
+# 4. Crear directorio para Let's Encrypt
+log "Preparando directorio para validación..."
+mkdir -p /var/www/html/.well-known/acme-challenge
+chown -R nginx:nginx /var/www/html 2>/dev/null || chown -R www-data:www-data /var/www/html 2>/dev/null || true
+chmod -R 755 /var/www/html
+
+# 5. Verificar configuración de Nginx
 log "Verificando configuración de Nginx..."
 if nginx -t; then
     log "Configuración de Nginx válida"
@@ -148,25 +136,26 @@ else
     error "Configuración de Nginx inválida"
 fi
 
-# 5. Reiniciar Nginx
-log "Reiniciando Nginx..."
-systemctl restart nginx
+# 6. Iniciar Nginx
+log "Iniciando Nginx..."
+systemctl start nginx
 
 if systemctl is-active --quiet nginx; then
-    log "Nginx reiniciado correctamente"
+    log "Nginx iniciado correctamente"
 else
-    error "Error al reiniciar Nginx"
+    error "Error al iniciar Nginx"
 fi
 
-# 6. Verificar que Nginx esté escuchando
+# 7. Verificar que Nginx esté escuchando
 log "Verificando puertos..."
+sleep 2
 if netstat -tlnp | grep -q ":80.*nginx"; then
     log "✓ Nginx escuchando en puerto 80"
 else
     warn "⚠ Nginx no está escuchando en puerto 80"
 fi
 
-# 7. Probar conectividad
+# 8. Probar conectividad
 log "Probando conectividad..."
 if curl -s --connect-timeout 10 http://localhost/ > /dev/null 2>&1; then
     log "✓ Conexión HTTP funcionando"
@@ -174,7 +163,7 @@ else
     warn "⚠ Conexión HTTP no responde"
 fi
 
-# 8. Verificar proxy a Tomcat
+# 9. Verificar proxy a Tomcat
 log "Verificando proxy a Tomcat..."
 if netstat -tlnp | grep -q ":8080.*java"; then
     log "✓ Tomcat escuchando en puerto 8080"
@@ -197,19 +186,19 @@ echo " ════════════════════════�
 echo -e "${NC}"
 
 log "Resumen de acciones realizadas:"
-echo -e "${GREEN}  ✓ Directorio SSL creado: $SSL_DIR${NC}"
-echo -e "${GREEN}  ✓ Certificados autofirmados generados${NC}"
-echo -e "${GREEN}  ✓ Configuración temporal de Nginx creada${NC}"
+echo -e "${GREEN}  ✓ Configuraciones conflictivas eliminadas${NC}"
+echo -e "${GREEN}  ✓ Configuración simple de Nginx creada${NC}"
 echo -e "${GREEN}  ✓ Nginx reiniciado y funcionando${NC}"
+echo -e "${GREEN}  ✓ Directorio para Let's Encrypt preparado${NC}"
 
 echo -e "\n${YELLOW}=== ESTADO ACTUAL ===${NC}"
 echo -e "${GREEN}✓ Nginx funcionando en HTTP (puerto 80)${NC}"
 echo -e "${GREEN}✓ Proxy reverso a Tomcat configurado${NC}"
-echo -e "${YELLOW}⚠ SSL deshabilitado temporalmente${NC}"
+echo -e "${YELLOW}⚠ SSL no configurado (usar setup-ssl-step-by-step.sh)${NC}"
 
 echo -e "\n${YELLOW}=== PRÓXIMOS PASOS ===${NC}"
 echo -e "${GREEN}1. Verificar aplicación: http://$DOMAIN${NC}"
-echo -e "${GREEN}2. Para habilitar SSL: sudo certbot --nginx -d $DOMAIN${NC}"
+echo -e "${GREEN}2. Para configurar SSL: sudo ./setup-ssl-step-by-step.sh${NC}"
 echo -e "${GREEN}3. Verificar logs: sudo tail -f /var/log/nginx/$DOMAIN.access.log${NC}"
 
 echo -e "\n${YELLOW}=== COMANDOS ÚTILES ===${NC}"
@@ -219,3 +208,4 @@ echo -e "${GREEN}Probar configuración: sudo nginx -t${NC}"
 
 log "Nginx configurado correctamente para funcionar sin SSL"
 log "La aplicación debería estar accesible en: http://$DOMAIN"
+log "Para configurar SSL, ejecuta: sudo ./setup-ssl-step-by-step.sh"
