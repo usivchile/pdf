@@ -44,6 +44,7 @@ SCRIPTS=(
     "troubleshoot.sh"
     "help.sh"
     "manage-tomcat.sh"
+    "fix-deployment-error.sh"
     "make-executable.sh"
     "install-vps.sh"
     "deploy-complete.sh"
