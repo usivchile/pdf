@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -271,7 +272,7 @@ public class FileManagementService {
             
             if (Files.exists(baseDir)) {
                 try (Stream<Path> paths = Files.walk(baseDir)) {
-                    for (Path path : paths.filter(Files::isRegularFile).toList()) {
+                    for (Path path : paths.filter(Files::isRegularFile).collect(Collectors.toList())) {
                         long size = Files.size(path);
                         if (path.startsWith(trashDir)) {
                             trashFiles++;
