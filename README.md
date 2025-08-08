@@ -606,6 +606,24 @@ chmod +x make-executable.sh
 ./make-executable.sh
 ```
 
+### Errores de Despliegue
+
+Si encuentras errores como "cannot create regular file '/var/www/html/': No such file or directory":
+
+```bash
+# Usar el script de corrección automática
+sudo ./fix-deployment-error.sh
+
+# Luego ejecutar nuevamente el despliegue
+sudo ./update-local.sh
+```
+
+**Errores comunes corregidos automáticamente:**
+- Directorio `/var/www/html` faltante
+- Permisos incorrectos en directorios
+- Propietarios incorrectos de archivos de Tomcat
+- Servicios no iniciados
+
 ### Diagnóstico Automático
 
 ```bash
@@ -700,6 +718,7 @@ Se incluyen varios scripts automatizados para facilitar el despliegue:
 - `troubleshoot.sh`: Diagnóstico y solución de problemas de Maven/Java
 - `help.sh`: Ayuda interactiva con todas las opciones disponibles
 - `manage-tomcat.sh`: Gestión de instancias de Tomcat (detener duplicados, verificar estado)
+- `fix-deployment-error.sh`: Corrige errores comunes de despliegue (directorios faltantes, permisos)
 
 ### Uso Recomendado
 

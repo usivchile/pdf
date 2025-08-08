@@ -210,6 +210,8 @@ deploy_new_version() {
     
     # Actualizar cliente de pruebas si existe
     if [ -f "test-client.html" ]; then
+        # Crear directorio si no existe
+        mkdir -p "/var/www/html"
         cp "test-client.html" "/var/www/html/"
         success "Cliente de pruebas actualizado"
     fi

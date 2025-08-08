@@ -233,6 +233,8 @@ deploy_new_version() {
     
     # Actualizar cliente de pruebas si existe
     if [ -f "$UPDATE_DIR/pdf-validator-source/test-client.html" ]; then
+        # Crear directorio si no existe
+        mkdir -p "/var/www/html"
         cp "$UPDATE_DIR/pdf-validator-source/test-client.html" "/var/www/html/"
         success "Cliente de pruebas actualizado"
     fi
