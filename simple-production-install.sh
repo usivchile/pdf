@@ -117,15 +117,75 @@ echo
 echo "⚙️  PASO 3: CONFIGURACIÓN DEL SISTEMA"
 echo "═══════════════════════════════════════════════════════════════════"
 
-# Configurar Tomcat
-echo "🔧 Configurando Tomcat..."
+# Corregir rutas de Tomcat (problema común en instalaciones desde repositorios)
+echo "🔧 Corrigiendo rutas de Tomcat..."
 
-# Configurar memoria JVM para Tomcat
+# Verificar directorios de Tomcat
+if [ -d "/usr/share/tomcat" ]; then
+    TOMCAT_HOME="/usr/share/tomcat"
+    echo "✅ CATALINA_HOME encontrado: $TOMCAT_HOME"
+else
+    echo "❌ No se encontró /usr/share/tomcat"
+    exit 1
+fi
+
+if [ -d "/var/lib/tomcat" ]; then
+    TOMCAT_BASE="/var/lib/tomcat"
+    echo "✅ CATALINA_BASE encontrado: $TOMCAT_BASE"
+else
+    echo "❌ No se encontró /var/lib/tomcat"
+    exit 1
+fi
+
+# Crear directorios necesarios
+echo "📁 Creando directorios necesarios..."
+directories=(
+    "/var/lib/tomcat/webapps"
+    "/var/cache/tomcat"
+    "/var/cache/tomcat/temp"
+    "/var/log/tomcat"
+)
+
+for dir in "${directories[@]}"; do
+    if [ ! -d "$dir" ]; then
+        mkdir -p "$dir"
+        echo "✅ Creado: $dir"
+    fi
+done
+
+# Configurar Tomcat con rutas corregidas
+echo "🔧 Configurando Tomcat con rutas corregidas..."
 cat > /etc/tomcat/tomcat.conf << 'EOF'
-# Configuración de memoria para PDF Signer
+# Configuración corregida para Tomcat desde repositorios
+# Rutas específicas para instalación desde paquetes
+
+# Directorios principales
+CATALINA_HOME="/usr/share/tomcat"
+CATALINA_BASE="/var/lib/tomcat"
+CATALINA_TMPDIR="/var/cache/tomcat/temp"
+
+# Configuración de Java
+JAVA_HOME="/usr/lib/jvm/java-11-openjdk"
 JAVA_OPTS="-Djava.awt.headless=true -Xmx1024m -Xms512m -XX:+UseG1GC"
 CATALINA_OPTS="-Dfile.encoding=UTF-8 -Duser.timezone=America/Santiago"
+
+# Usuario y grupo
+TOMCAT_USER="tomcat"
+TOMCAT_GROUP="tomcat"
+
+# Configuración de logs
+CATALINA_OUT="/var/log/tomcat/catalina.out"
 EOF
+
+# Configurar permisos
+echo "🔐 Configurando permisos..."
+chown -R tomcat:tomcat /var/lib/tomcat
+chown -R tomcat:tomcat /var/cache/tomcat
+chown -R tomcat:tomcat /var/log/tomcat
+chmod -R 755 /var/lib/tomcat
+chmod -R 755 /var/cache/tomcat
+
+echo "✅ Rutas de Tomcat corregidas"
 
 # Configurar Nginx como proxy reverso
 echo "🌐 Configurando Nginx..."
