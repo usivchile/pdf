@@ -73,7 +73,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo "📝 EJEMPLOS:"
     echo "   sudo $0                          # Usa validador.usiv.cl por defecto"
     echo "   sudo $0 validador.usiv.cl       # Especifica dominio"
-    echo "   sudo $0 168.231.91.217          # Para IP (certificado autofirmado)"
+    echo "   sudo $0 validador.usiv.cl          # Para IP (certificado autofirmado)"
     echo
     echo "⚠️  REQUISITOS PREVIOS:"
     echo "   • El dominio debe apuntar a este servidor"

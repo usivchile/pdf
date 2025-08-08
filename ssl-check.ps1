@@ -1,5 +1,5 @@
 # Verificador SSL simple para PDF Signer
-param([string]$ServerIP = "168.231.91.217")
+param([string]$ServerIP = "validador.usiv.cl")
 
 function Test-Port {
     param([string]$Computer, [int]$Port)

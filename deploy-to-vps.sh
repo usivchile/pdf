@@ -204,15 +204,36 @@ fi
 # PASO 7: Configurar firewall
 log_step "CONFIGURANDO FIREWALL"
 
-log_info "Configurando reglas de firewall..."
+log_info "Detectando sistema de firewall..."
 
-# Abrir puertos necesarios
-firewall-cmd --permanent --add-service=http
-firewall-cmd --permanent --add-service=https
-firewall-cmd --permanent --add-port=8080/tcp
-firewall-cmd --reload
-
-log_success "Firewall configurado"
+# Detectar y configurar firewall disponible
+if command -v firewall-cmd &> /dev/null; then
+    log_info "Usando firewalld..."
+    firewall-cmd --permanent --add-service=http
+    firewall-cmd --permanent --add-service=https
+    firewall-cmd --permanent --add-port=8080/tcp
+    firewall-cmd --reload
+    log_success "Firewall configurado con firewalld"
+elif command -v ufw &> /dev/null; then
+    log_info "Usando UFW..."
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 8080/tcp
+    log_success "Firewall configurado con UFW"
+elif command -v iptables &> /dev/null; then
+    log_info "Usando iptables..."
+    iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+    # Intentar guardar reglas
+    if command -v iptables-save &> /dev/null; then
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    fi
+    log_success "Firewall configurado con iptables"
+else
+    log_warn "⚠️  No se detectó sistema de firewall conocido"
+    log_info "Asegúrate manualmente de que los puertos 80, 443 y 8080 estén abiertos"
+fi
 
 # PASO 8: Verificación final
 log_step "VERIFICACIÓN FINAL"

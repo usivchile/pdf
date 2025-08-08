@@ -3,7 +3,7 @@
 # Autor: PDF Signer Team
 
 param(
-    [string]$ServerIP = "168.231.91.217"
+    [string]$ServerIP = "validador.usiv.cl"
 )
 
 # Funcion para escribir con colores

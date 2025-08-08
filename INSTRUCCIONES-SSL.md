@@ -100,7 +100,7 @@ chmod +x setup-ssl-letsencrypt.sh
 sudo ./setup-ssl-letsencrypt.sh validador.usiv.cl usiv@usiv.cl
 
 # Para IP (certificado autofirmado)
-sudo ./setup-ssl-letsencrypt.sh 168.231.91.217
+sudo ./setup-ssl-letsencrypt.sh validador.usiv.cl
 ```
 
 ### ✅ **¡Listo!** Tu aplicación estará disponible en:
@@ -164,7 +164,7 @@ sudo mkdir -p /etc/ssl/private /etc/ssl/certs
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/ssl/private/pdf-signer.key \
     -out /etc/ssl/certs/pdf-signer.crt \
-    -subj "/C=CL/ST=Santiago/L=Santiago/O=USIV/OU=IT/CN=168.231.91.217"
+    -subj "/C=CL/ST=Santiago/L=Santiago/O=USIV/OU=IT/CN=validador.usiv.cl"
 ```
 
 Luego configurar Nginx:
@@ -173,13 +173,13 @@ Luego configurar Nginx:
 sudo tee /etc/nginx/conf.d/pdf-signer.conf << 'EOF'
 server {
     listen 80;
-    server_name 168.231.91.217;
+    server_name validador.usiv.cl;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name 168.231.91.217;
+    server_name validador.usiv.cl;
     
     ssl_certificate /etc/ssl/certs/pdf-signer.crt;
     ssl_certificate_key /etc/ssl/private/pdf-signer.key;

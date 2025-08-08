@@ -131,51 +131,51 @@
             <h4>🔒 URLs HTTPS (Recomendadas - Evitan Firewall Corporativo)</h4>
             <p><strong>Si tienes SSL configurado, usa estas URLs:</strong></p>
             <ul>
-                <li><strong>Aplicación:</strong> <a href="https://168.231.91.217/pdf-signer/" target="_blank">https://168.231.91.217/pdf-signer/</a></li>
-                <li><strong>Health Check:</strong> <a href="https://168.231.91.217/pdf-signer/api/health" target="_blank">https://168.231.91.217/pdf-signer/api/health</a></li>
-                <li><strong>Swagger UI:</strong> <a href="https://168.231.91.217/pdf-signer/swagger-ui/index.html" target="_blank">https://168.231.91.217/pdf-signer/swagger-ui/index.html</a></li>
+                <li><strong>Aplicación:</strong> <a href="https://validador.usiv.cl/pdf-signer/" target="_blank">https://validador.usiv.cl/pdf-signer/</a></li>
+                <li><strong>Health Check:</strong> <a href="https://validador.usiv.cl/pdf-signer/api/health" target="_blank">https://validador.usiv.cl/pdf-signer/api/health</a></li>
+                <li><strong>Swagger UI:</strong> <a href="https://validador.usiv.cl/pdf-signer/swagger-ui/index.html" target="_blank">https://validador.usiv.cl/pdf-signer/swagger-ui/index.html</a></li>
             </ul>
             <p><em>💡 HTTPS suele bypasear firewalls corporativos que bloquean HTTP</em></p>
         </div>
         
         <div class="url-test">
-            <input type="text" id="nginx-https-url" value="https://168.231.91.217/pdf-signer/" readonly>
+            <input type="text" id="nginx-https-url" value="https://validador.usiv.cl/pdf-signer/" readonly>
             <button onclick="testUrl('nginx-https-url', 'nginx-https-status')">🔒 Probar Nginx HTTPS</button>
             <span id="nginx-https-status" class="status">No probado</span>
         </div>
         
         <div class="url-test">
-            <input type="text" id="nginx-url" value="http://168.231.91.217/pdf-signer/" readonly>
+            <input type="text" id="nginx-url" value="http://validador.usiv.cl/pdf-signer/" readonly>
             <button onclick="testUrl('nginx-url', 'nginx-status')">Probar Nginx HTTP</button>
             <span id="nginx-status" class="status">No probado</span>
         </div>
         
         <div class="url-test">
-            <input type="text" id="tomcat-url" value="http://168.231.91.217:8080/pdf-signer/" readonly>
+            <input type="text" id="tomcat-url" value="http://validador.usiv.cl:8080/pdf-signer/" readonly>
             <button onclick="testUrl('tomcat-url', 'tomcat-status')">Probar Tomcat</button>
             <span id="tomcat-status" class="status">No probado</span>
         </div>
         
         <div class="url-test">
-            <input type="text" id="health-https-url" value="https://168.231.91.217/pdf-signer/api/health" readonly>
+            <input type="text" id="health-https-url" value="https://validador.usiv.cl/pdf-signer/api/health" readonly>
             <button onclick="testUrl('health-https-url', 'health-https-status')">🔒 Health Check HTTPS</button>
             <span id="health-https-status" class="status">No probado</span>
         </div>
         
         <div class="url-test">
-            <input type="text" id="health-url" value="http://168.231.91.217/pdf-signer/api/health" readonly>
+            <input type="text" id="health-url" value="http://validador.usiv.cl/pdf-signer/api/health" readonly>
             <button onclick="testUrl('health-url', 'health-status')">Health Check HTTP</button>
             <span id="health-status" class="status">No probado</span>
         </div>
         
         <div class="url-test">
-            <input type="text" id="swagger-https-url" value="https://168.231.91.217/pdf-signer/swagger-ui/index.html" readonly>
+            <input type="text" id="swagger-https-url" value="https://validador.usiv.cl/pdf-signer/swagger-ui/index.html" readonly>
             <button onclick="testUrl('swagger-https-url', 'swagger-https-status')">🔒 Swagger UI HTTPS</button>
             <span id="swagger-https-status" class="status">No probado</span>
         </div>
         
         <div class="url-test">
-            <input type="text" id="swagger-url" value="http://168.231.91.217/pdf-signer/swagger-ui/index.html" readonly>
+            <input type="text" id="swagger-url" value="http://validador.usiv.cl/pdf-signer/swagger-ui/index.html" readonly>
             <button onclick="testUrl('swagger-url', 'swagger-status')">Swagger UI HTTP</button>
             <span id="swagger-status" class="status">No probado</span>
         </div>
@@ -198,7 +198,7 @@
                     <option value="https">🔒 HTTPS (Recomendado)</option>
                     <option value="http" selected>🔓 HTTP</option>
                 </select>
-                <input type="text" id="api-base" value="http://168.231.91.217/pdf-signer/api">
+                <input type="text" id="api-base" value="http://validador.usiv.cl/pdf-signer/api">
             </div>
             <div class="form-group">
                 <label>Usuario:</label>
@@ -232,7 +232,7 @@
     <div class="container">
         <h2>3. Información del Sistema</h2>
         <div id="system-info">
-            <p><strong>IP del Servidor:</strong> 168.231.91.217</p>
+            <p><strong>IP del Servidor:</strong> validador.usiv.cl</p>
             <p><strong>Puerto Nginx:</strong> 80</p>
             <p><strong>Puerto Tomcat:</strong> 8080</p>
             <p><strong>Contexto de Aplicación:</strong> /pdf-signer/</p>
@@ -257,10 +257,10 @@
                 <h5>1. Verificación Manual en Navegador</h5>
                 <p>Abre estas URLs directamente en nuevas pestañas:</p>
                 <ul>
-                    <li><a href="http://168.231.91.217/pdf-signer/" target="_blank">http://168.231.91.217/pdf-signer/</a></li>
-                    <li><a href="http://168.231.91.217:8080/pdf-signer/" target="_blank">http://168.231.91.217:8080/pdf-signer/</a></li>
-                    <li><a href="http://168.231.91.217/pdf-signer/api/health" target="_blank">http://168.231.91.217/pdf-signer/api/health</a></li>
-                    <li><a href="http://168.231.91.217/pdf-signer/swagger-ui/index.html" target="_blank">http://168.231.91.217/pdf-signer/swagger-ui/index.html</a></li>
+                    <li><a href="http://validador.usiv.cl/pdf-signer/" target="_blank">http://validador.usiv.cl/pdf-signer/</a></li>
+                    <li><a href="http://validador.usiv.cl:8080/pdf-signer/" target="_blank">http://validador.usiv.cl:8080/pdf-signer/</a></li>
+                    <li><a href="http://validador.usiv.cl/pdf-signer/api/health" target="_blank">http://validador.usiv.cl/pdf-signer/api/health</a></li>
+                    <li><a href="http://validador.usiv.cl/pdf-signer/swagger-ui/index.html" target="_blank">http://validador.usiv.cl/pdf-signer/swagger-ui/index.html</a></li>
                 </ul>
             </div>
             
@@ -270,24 +270,24 @@
                 
                 <div style="background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0;">
                     <strong># Verificar conectividad básica</strong><br>
-                    ping 168.231.91.217
+                    ping validador.usiv.cl
                 </div>
                 
                 <div style="background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0;">
                     <strong># Verificar puertos abiertos</strong><br>
-                    telnet 168.231.91.217 80<br>
-                    telnet 168.231.91.217 8080
+                    telnet validador.usiv.cl 80<br>
+                    telnet validador.usiv.cl 8080
                 </div>
                 
                 <div style="background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0;">
                     <strong># Probar con curl (si está disponible)</strong><br>
-                    curl -I http://168.231.91.217/pdf-signer/<br>
-                    curl -I http://168.231.91.217:8080/pdf-signer/
+                    curl -I http://validador.usiv.cl/pdf-signer/<br>
+                    curl -I http://validador.usiv.cl:8080/pdf-signer/
                 </div>
                 
                 <div style="background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0;">
                     <strong># Probar API de autenticación</strong><br>
-                    curl -X POST "http://168.231.91.217/pdf-signer/api/auth/login" \<br>
+                    curl -X POST "http://validador.usiv.cl/pdf-signer/api/auth/login" \<br>
                     &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
                     &nbsp;&nbsp;-d '{"username":"admin","password":"admin123"}'
                 </div>
@@ -297,13 +297,13 @@
                 <h5>3. Verificación con PowerShell (Windows)</h5>
                 <div style="background: #012456; color: #ffffff; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0;">
                     <strong># Verificar conectividad</strong><br>
-                    Test-NetConnection -ComputerName 168.231.91.217 -Port 80<br>
-                    Test-NetConnection -ComputerName 168.231.91.217 -Port 8080
+                    Test-NetConnection -ComputerName validador.usiv.cl -Port 80<br>
+                    Test-NetConnection -ComputerName validador.usiv.cl -Port 8080
                 </div>
                 
                 <div style="background: #012456; color: #ffffff; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0;">
                     <strong># Probar con Invoke-WebRequest</strong><br>
-                    Invoke-WebRequest -Uri "http://168.231.91.217/pdf-signer/api/health" -Method GET
+                    Invoke-WebRequest -Uri "http://validador.usiv.cl/pdf-signer/api/health" -Method GET
                 </div>
             </div>
             
