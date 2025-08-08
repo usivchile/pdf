@@ -44,19 +44,36 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Verificar parámetros
-if [ $# -eq 0 ]; then
+# Validar parámetros
+if [ -z "$DOMAIN" ]; then
+    DOMAIN="validador.usiv.cl"
+    log_info "Usando dominio por defecto: $DOMAIN"
+fi
+
+# Validar que estamos en producción
+if [ "$DOMAIN" != "validador.usiv.cl" ]; then
+    log_warn "⚠️  Este script está configurado para validador.usiv.cl"
+    log_warn "Si necesitas otro dominio, edita el script manualmente"
+    read -p "¿Continuar con $DOMAIN? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+# Verificar parámetros (mostrar ayuda si se solicita)
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo "═══════════════════════════════════════════════════════════════════"
     echo "                    🔒 CONFIGURACIÓN SSL CON LET'S ENCRYPT"
     echo "═══════════════════════════════════════════════════════════════════"
     echo
     echo "📋 USO:"
-    echo "   sudo $0 <dominio> [email]"
+    echo "   sudo $0 [dominio] [email]"
     echo
     echo "📝 EJEMPLOS:"
-    echo "   sudo $0 validador.usiv.cl usiv@usiv.cl"
-    echo "   sudo $0 mi-servidor.com"
-    echo "   sudo $0 168.231.91.217  # Para IP (certificado autofirmado)"
+    echo "   sudo $0                          # Usa validador.usiv.cl por defecto"
+    echo "   sudo $0 validador.usiv.cl       # Especifica dominio"
+    echo "   sudo $0 168.231.91.217          # Para IP (certificado autofirmado)"
     echo
     echo "⚠️  REQUISITOS PREVIOS:"
     echo "   • El dominio debe apuntar a este servidor"
@@ -75,8 +92,27 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-DOMAIN="$1"
-EMAIL="${2:-admin@${DOMAIN}}"
+DOMAIN="${1:-validador.usiv.cl}"  # Dominio por defecto
+EMAIL="admin@${DOMAIN}"  # Email para Let's Encrypt
+WEBROOT="/var/lib/tomcat/webapps/pdf-signer"  # Directorio web de la aplicación
+NGINX_CONFIG="/etc/nginx/conf.d/pdf-signer.conf"  # Archivo de configuración de Nginx
+
+# Validación del dominio
+if [ "$DOMAIN" != "validador.usiv.cl" ]; then
+    log_warn "⚠️  ADVERTENCIA: Estás configurando SSL para '$DOMAIN'"
+    log_warn "⚠️  El dominio esperado es 'validador.usiv.cl'"
+    log_warn "⚠️  Usar un dominio diferente puede causar problemas de configuración"
+    echo
+    read -p "¿Estás seguro de que quieres continuar con '$DOMAIN'? (s/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+        log_error "Configuración cancelada por el usuario"
+        log_info "Para usar el dominio correcto, ejecuta: $0 validador.usiv.cl"
+        exit 1
+    fi
+else
+    log_success "Configurando SSL para el dominio correcto: $DOMAIN"
+fi
 
 # Detectar si es una IP
 if [[ $DOMAIN =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
@@ -94,6 +130,38 @@ echo "📍 Dominio/IP: $DOMAIN"
 echo "📧 Email: $EMAIL"
 echo "🕐 Fecha: $(date)"
 echo "═══════════════════════════════════════════════════════════════════"
+
+# PASO 0: Limpieza para producción
+log_step "LIMPIEZA PARA PRODUCCIÓN"
+
+log_info "Eliminando archivos de desarrollo y pruebas..."
+
+# Eliminar archivos de prueba y desarrollo
+rm -f test-client.html 2>/dev/null && log_success "Eliminado: test-client.html"
+rm -f test-internet-access.html 2>/dev/null && log_success "Eliminado: test-internet-access.html"
+rm -f ssl-check.ps1 2>/dev/null && log_success "Eliminado: ssl-check.ps1"
+rm -f check-ssl-status.ps1 2>/dev/null && log_success "Eliminado: check-ssl-status.ps1"
+rm -f pdf-firmado.pdf 2>/dev/null && log_success "Eliminado: pdf-firmado.pdf"
+
+# Eliminar directorios de desarrollo
+rm -rf .settings/ 2>/dev/null && log_success "Eliminado: .settings/"
+rm -f .classpath .project 2>/dev/null && log_success "Eliminados: archivos de Eclipse"
+
+# Limpiar target si existe
+if [ -d "target" ]; then
+    log_info "Limpiando directorio target..."
+    rm -rf target/classes/application-dev.properties 2>/dev/null
+    rm -rf target/test-classes/ 2>/dev/null
+    log_success "Directorio target limpiado"
+fi
+
+# Verificar que estamos en el directorio correcto
+if [ ! -f "pom.xml" ]; then
+    log_error "No se encontró pom.xml. Asegúrate de estar en el directorio del proyecto."
+    exit 1
+fi
+
+log_success "Limpieza para producción completada"
 
 # PASO 1: Verificar servicios previos
 log_step "VERIFICANDO SERVICIOS PREVIOS"

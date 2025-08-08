@@ -1,6 +1,63 @@
 # 🔒 CONFIGURACIÓN SSL CON LET'S ENCRYPT
 
-## 📋 Guía Completa para Habilitar HTTPS
+## 📋 Configuración SSL para PDF Signer en VPS (validador.usiv.cl)
+
+Este documento proporciona instrucciones completas para configurar SSL/HTTPS en tu VPS usando Let's Encrypt.
+
+### Requisitos Previos
+
+- VPS con Linux (CentOS/RHEL/Rocky Linux recomendado)
+- Dominio `validador.usiv.cl` apuntando a tu VPS
+- Puertos 80 y 443 abiertos en el firewall
+- Nginx y Tomcat instalados y funcionando
+- Acceso root al VPS
+- Git configurado en el VPS
+
+## 🚀 FLUJO COMPLETO DE DESPLIEGUE
+
+### 1. Desde tu máquina local
+
+```bash
+# Hacer commit de tus cambios
+git add .
+git commit -m "Preparando despliegue con SSL"
+
+# Subir cambios al repositorio
+git push origin main
+```
+
+### 2. En tu VPS
+
+```bash
+# Conectarse al VPS
+ssh root@validador.usiv.cl
+
+# Ejecutar el script de despliegue completo
+sudo ./deploy-to-vps.sh
+```
+
+**¡Eso es todo!** El script `deploy-to-vps.sh` se encarga de:
+- Hacer `git pull` para obtener los últimos cambios
+- Limpiar archivos de desarrollo
+- Compilar la aplicación
+- Desplegar en Tomcat
+- Configurar SSL automáticamente
+- Configurar Nginx con HTTPS
+- Verificar que todo funcione
+
+### 3. Verificación
+
+Después del despliegue, verifica que todo funcione:
+
+```bash
+# En el VPS, ejecutar verificación
+sudo ./check-ssl-status.sh
+```
+
+**URLs de acceso:**
+- Aplicación: https://validador.usiv.cl/pdf-signer/
+- Health Check: https://validador.usiv.cl/pdf-signer/api/health
+- Swagger UI: https://validador.usiv.cl/pdf-signer/swagger-ui/
 
 ### 🎯 **¿Por qué configurar SSL?**
 
