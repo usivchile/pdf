@@ -678,10 +678,18 @@ Se incluyen varios scripts automatizados para facilitar el despliegue:
 **Scripts de Soporte:**
 - `deploy-complete.sh`: Script de despliegue con archivos locales precompilados
 - `install-vps.sh`: Instalación base de Java 17, Tomcat 10 y configuraciones iniciales
-- `configure-nginx.sh`: Configuración de Nginx como proxy reverso con SSL
+- `configure-nginx.sh`: Configuración de Nginx como proxy reverso con SSL, incluyendo:
+  - **Redirección automática HTTP a HTTPS** (puerto 80 → 443)
+  - **Verificación de instancias únicas de Tomcat**
+  - Configuración SSL con Let's Encrypt
+  - Headers de seguridad
+  - Rate limiting
+  - Monitoreo automático
+  - Detección y resolución de conflictos de puertos
 - `security-hardening.sh`: Endurecimiento de seguridad del sistema y aplicación
 - `troubleshoot.sh`: Diagnóstico y solución de problemas de Maven/Java
 - `help.sh`: Ayuda interactiva con todas las opciones disponibles
+- `manage-tomcat.sh`: Gestión de instancias de Tomcat (detener duplicados, verificar estado)
 
 ### Uso Recomendado
 

@@ -43,7 +43,75 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Función para verificar que solo esté corriendo nuestro Tomcat
+check_tomcat_instances() {
+    log "Verificando instancias de Tomcat..."
+    
+    TOMCAT_PROCESSES=$(ps aux | grep -E '[t]omcat|[j]ava.*catalina' | grep -v grep)
+    TOMCAT_COUNT=$(echo "$TOMCAT_PROCESSES" | grep -c . || echo "0")
+    
+    if [ "$TOMCAT_COUNT" -eq 0 ]; then
+        warn "No se encontraron procesos de Tomcat ejecutándose"
+        warn "Asegúrate de iniciar Tomcat antes de configurar Nginx"
+    elif [ "$TOMCAT_COUNT" -eq 1 ]; then
+        log "Solo una instancia de Tomcat ejecutándose (correcto)"
+        echo "Proceso: $(echo "$TOMCAT_PROCESSES" | head -1)"
+    else
+        warn "Se encontraron múltiples procesos de Tomcat/Java:"
+        echo "$TOMCAT_PROCESSES"
+        warn "Esto puede causar conflictos. Considera detener instancias innecesarias."
+        
+        read -p "¿Deseas continuar de todos modos? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            error "Configuración cancelada por el usuario"
+        fi
+    fi
+    
+    # Verificar que Tomcat esté en el puerto correcto
+    if netstat -tlnp | grep -q ":$TOMCAT_PORT.*java"; then
+        log "Tomcat está ejecutándose en puerto $TOMCAT_PORT"
+    else
+        warn "Tomcat no está ejecutándose en puerto $TOMCAT_PORT"
+        warn "Verifica que Tomcat esté iniciado correctamente"
+    fi
+}
+
+# Función para detener servicios conflictivos en puertos 80 y 443
+stop_conflicting_services() {
+    log "Verificando servicios que puedan estar usando puertos 80 y 443..."
+    
+    # Verificar puerto 80
+    PORT_80_PROCESS=$(netstat -tlnp | grep ":80 " | grep -v nginx | awk '{print $7}' | cut -d'/' -f1 | head -1)
+    if [ -n "$PORT_80_PROCESS" ] && [ "$PORT_80_PROCESS" != "-" ]; then
+        warn "Proceso usando puerto 80: $PORT_80_PROCESS"
+        read -p "¿Deseas detener este proceso? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            kill -9 $PORT_80_PROCESS 2>/dev/null && log "Proceso detenido" || warn "No se pudo detener el proceso"
+        fi
+    fi
+    
+    # Verificar puerto 443
+    PORT_443_PROCESS=$(netstat -tlnp | grep ":443 " | grep -v nginx | awk '{print $7}' | cut -d'/' -f1 | head -1)
+    if [ -n "$PORT_443_PROCESS" ] && [ "$PORT_443_PROCESS" != "-" ]; then
+        warn "Proceso usando puerto 443: $PORT_443_PROCESS"
+        read -p "¿Deseas detener este proceso? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            kill -9 $PORT_443_PROCESS 2>/dev/null && log "Proceso detenido" || warn "No se pudo detener el proceso"
+        fi
+    fi
+}
+
 log "Iniciando configuración de Nginx para PDF Validator API..."
+log "Configuración incluye redirección HTTP a HTTPS y proxy reverso a Tomcat"
+
+# Verificar instancias de Tomcat
+check_tomcat_instances
+
+# Detener servicios conflictivos
+stop_conflicting_services
 
 # 1. Instalar Nginx
 log "Instalando Nginx..."
@@ -336,7 +404,103 @@ chmod +x /opt/monitor-pdf-validator.sh
 # Configurar cron para monitoreo cada 5 minutos
 echo "*/5 * * * * /opt/monitor-pdf-validator.sh" | crontab -
 
-# 12. Recargar Nginx con la nueva configuración
+# 12. Verificar configuración final
+log "Verificando configuración final..."
+
+# Función para probar redirección HTTP a HTTPS
+test_http_redirect() {
+    log "Probando redirección HTTP a HTTPS..."
+    
+    # Esperar un momento para que Nginx se estabilice
+    sleep 3
+    
+    # Probar redirección con localhost
+    HTTP_RESPONSE=$(curl -s -I --connect-timeout 10 http://localhost/ 2>/dev/null | head -1 || echo "")
+    if echo "$HTTP_RESPONSE" | grep -q "301\|302"; then
+        log "✓ Redirección HTTP a HTTPS funcionando correctamente"
+        LOCATION=$(curl -s -I --connect-timeout 10 http://localhost/ 2>/dev/null | grep -i "location:" | cut -d' ' -f2 | tr -d '\r' || echo "")
+        if [ -n "$LOCATION" ]; then
+            log "  Redirige a: $LOCATION"
+        fi
+    else
+        warn "Redirección HTTP a HTTPS no funciona como esperado"
+        warn "Respuesta HTTP: $HTTP_RESPONSE"
+    fi
+    
+    # Probar con el dominio si está configurado
+    if [ "$DOMAIN" != "localhost" ]; then
+        DOMAIN_RESPONSE=$(curl -s -I --connect-timeout 10 http://$DOMAIN/ 2>/dev/null | head -1 || echo "")
+        if echo "$DOMAIN_RESPONSE" | grep -q "301\|302"; then
+            log "✓ Redirección HTTP a HTTPS funcionando para $DOMAIN"
+        else
+            warn "Redirección HTTP a HTTPS no funciona para $DOMAIN"
+        fi
+    fi
+}
+
+# Función para verificar instancias de Tomcat final
+final_tomcat_check() {
+    log "Verificación final de instancias de Tomcat..."
+    
+    TOMCAT_PROCESSES=$(ps aux | grep -E '[t]omcat|[j]ava.*catalina' | grep -v grep)
+    TOMCAT_COUNT=$(echo "$TOMCAT_PROCESSES" | grep -c . || echo "0")
+    
+    if [ "$TOMCAT_COUNT" -eq 0 ]; then
+        warn "⚠ No se encontraron procesos de Tomcat ejecutándose"
+        warn "  Asegúrate de iniciar Tomcat: sudo systemctl start tomcat"
+    elif [ "$TOMCAT_COUNT" -eq 1 ]; then
+        log "✓ Solo una instancia de Tomcat ejecutándose (correcto)"
+        log "  Proceso: $(echo "$TOMCAT_PROCESSES" | head -1 | awk '{print $2, $11, $12, $13}' | cut -c1-80)"
+        
+        # Verificar puerto
+        if netstat -tlnp | grep -q ":$TOMCAT_PORT.*java"; then
+            log "✓ Tomcat escuchando en puerto $TOMCAT_PORT"
+        else
+            warn "⚠ Tomcat no está escuchando en puerto $TOMCAT_PORT"
+        fi
+    else
+        warn "⚠ Se encontraron múltiples procesos de Tomcat/Java ($TOMCAT_COUNT):"
+        echo "$TOMCAT_PROCESSES" | while read line; do
+            warn "  $line"
+        done
+        warn "  Esto puede causar conflictos de puerto y rendimiento"
+        warn "  Considera detener instancias innecesarias"
+    fi
+}
+
+# Función para probar conectividad completa
+test_full_connectivity() {
+    log "Probando conectividad completa..."
+    
+    # Probar HTTPS si hay certificado
+    if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] || [ -f "/etc/nginx/ssl/nginx-selfsigned.crt" ]; then
+        if curl -s --connect-timeout 10 -k https://localhost/ > /dev/null 2>&1; then
+            log "✓ Conexión HTTPS funcionando"
+        else
+            warn "⚠ Conexión HTTPS no responde"
+        fi
+    else
+        warn "⚠ No se encontró certificado SSL configurado"
+    fi
+    
+    # Probar endpoint de API si Tomcat está corriendo
+    if netstat -tlnp | grep -q ":$TOMCAT_PORT.*java"; then
+        API_RESPONSE=$(curl -s --connect-timeout 10 -k https://localhost/api/health 2>/dev/null || echo "")
+        if [ -n "$API_RESPONSE" ]; then
+            log "✓ Endpoint de API accesible vía HTTPS"
+        else
+            warn "⚠ Endpoint de API no accesible vía HTTPS"
+            warn "  Verifica que la aplicación esté desplegada correctamente"
+        fi
+    fi
+}
+
+# Ejecutar verificaciones
+test_http_redirect
+final_tomcat_check
+test_full_connectivity
+
+# 13. Recargar Nginx con la nueva configuración
 log "Recargando Nginx..."
 systemctl reload nginx
 
