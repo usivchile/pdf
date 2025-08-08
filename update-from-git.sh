@@ -51,7 +51,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Variables de configuración
-GIT_REPO="https://github.com/tu-usuario/pdf-validator-api.git"  # CAMBIAR POR TU REPOSITORIO
+GIT_REPO="https://github.com/usivchile/pdf.git"  # CAMBIAR POR TU REPOSITORIO
 GIT_BRANCH="main"
 WAR_FILE="pdf-signer-war-1.0.war"
 TOMCAT_HOME="/opt/tomcat"
