@@ -38,18 +38,21 @@ git push origin main
 # Conectarse al VPS
 ssh root@validador.usiv.cl
 
-# Ir al directorio del proyecto (usualmente /opt/pdf-signer)
-cd /opt/pdf-signer
+# Ir al directorio del proyecto
+cd /ruta/a/tu/proyecto
 
-# Ejecutar el script de despliegue completo
+# Actualizar código manualmente
+git pull origin main
+
+# Ejecutar el script de despliegue
 sudo ./deploy-to-vps.sh
 ```
 
-**¡Eso es todo!** El script se encarga de todo automáticamente.
+**El script se encarga del resto automáticamente.**
 
 ## 🔧 QUÉ HACE EL SCRIPT DE DESPLIEGUE
 
-1. **Actualización de código**: `git pull` automático
+1. **Verificación**: Confirma que el código esté actualizado
 2. **Limpieza**: Elimina archivos de desarrollo
 3. **Compilación**: `mvn clean package`
 4. **Despliegue**: Copia WAR a Tomcat

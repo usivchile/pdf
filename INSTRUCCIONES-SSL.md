@@ -32,12 +32,18 @@ git push origin main
 # Conectarse al VPS
 ssh root@validador.usiv.cl
 
-# Ejecutar el script de despliegue completo
+# Ir al directorio del proyecto
+cd /ruta/a/tu/proyecto
+
+# Actualizar código manualmente
+git pull origin main
+
+# Ejecutar el script de despliegue
 sudo ./deploy-to-vps.sh
 ```
 
-**¡Eso es todo!** El script `deploy-to-vps.sh` se encarga de:
-- Hacer `git pull` para obtener los últimos cambios
+**El script `deploy-to-vps.sh` se encarga de:**
+- Verificar que el código esté actualizado
 - Limpiar archivos de desarrollo
 - Compilar la aplicación
 - Desplegar en Tomcat

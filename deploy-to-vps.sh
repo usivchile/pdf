@@ -39,8 +39,7 @@ log_step() {
 
 # Configuración
 DOMAIN="validador.usiv.cl"
-PROJECT_DIR="/opt/pdf-signer"
-GIT_REPO="https://github.com/tu-usuario/pdf-signer.git"  # Actualizar con tu repo
+PROJECT_DIR="$(pwd)"  # Usar directorio actual
 TOMCAT_USER="tomcat"
 NGINX_USER="nginx"
 
@@ -59,50 +58,39 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# PASO 1: Preparar directorio del proyecto
-log_step "PREPARANDO DIRECTORIO DEL PROYECTO"
+# PASO 1: Verificar directorio del proyecto
+log_step "VERIFICANDO DIRECTORIO DEL PROYECTO"
 
-# Crear directorio si no existe
-if [ ! -d "$PROJECT_DIR" ]; then
-    log_info "Creando directorio del proyecto: $PROJECT_DIR"
-    mkdir -p "$PROJECT_DIR"
-    log_success "Directorio creado"
-else
-    log_info "Directorio del proyecto ya existe: $PROJECT_DIR"
+# Verificar que estamos en el directorio correcto
+if [ ! -f "pom.xml" ]; then
+    log_error "No se encontró pom.xml en el directorio actual: $PROJECT_DIR"
+    log_error "Asegúrate de ejecutar este script desde el directorio raíz del proyecto"
+    exit 1
 fi
 
-# Cambiar al directorio del proyecto
-cd "$PROJECT_DIR"
+log_success "Directorio del proyecto verificado: $PROJECT_DIR"
 
-# PASO 2: Actualizar código desde Git
-log_step "ACTUALIZANDO CÓDIGO DESDE GIT"
+# PASO 2: Verificar código actualizado
+log_step "VERIFICANDO CÓDIGO ACTUALIZADO"
 
 if [ -d ".git" ]; then
-    log_info "Repositorio Git encontrado, actualizando..."
+    log_info "Repositorio Git encontrado"
     
-    # Hacer backup de archivos de configuración locales
-    if [ -f "src/main/resources/application.properties" ]; then
-        cp src/main/resources/application.properties /tmp/app.properties.backup
-        log_info "Backup de configuración creado"
+    # Verificar si hay cambios sin commitear
+    if ! git diff-index --quiet HEAD --; then
+        log_warn "⚠️  Hay cambios sin commitear en el repositorio"
+        log_info "Asegúrate de haber hecho 'git pull' antes de ejecutar este script"
+    else
+        log_success "Repositorio limpio, listo para despliegue"
     fi
     
-    # Actualizar desde Git
-    git fetch origin
-    git reset --hard origin/main  # o master según tu rama principal
-    log_success "Código actualizado desde Git"
-    
-    # Restaurar configuración local si existe
-    if [ -f "/tmp/app.properties.backup" ]; then
-        cp /tmp/app.properties.backup src/main/resources/application.properties
-        log_info "Configuración local restaurada"
-    fi
+    # Mostrar último commit
+    LAST_COMMIT=$(git log -1 --pretty=format:"%h - %s (%an, %ar)")
+    log_info "Último commit: $LAST_COMMIT"
 else
-    log_info "Clonando repositorio por primera vez..."
-    cd /opt
-    rm -rf pdf-signer
-    git clone "$GIT_REPO" pdf-signer
-    cd pdf-signer
-    log_success "Repositorio clonado"
+    log_error "No se encontró repositorio Git en este directorio"
+    log_error "Asegúrate de estar en el directorio correcto del proyecto"
+    exit 1
 fi
 
 # PASO 3: Verificar dependencias del sistema
