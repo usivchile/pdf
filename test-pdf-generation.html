@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Generación de PDFs - USIV Production</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .auth-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #3498db;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #ecf0f1;
+            transition: all 0.3s ease;
+        }
+        .test-card:hover {
+            border-color: #3498db;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+        .test-card h3 {
+            color: #34495e;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="text"], input[type="password"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 2px solid #ffeaa7;
+            color: #856404;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-bar {
+            background: #34495e;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .preset-buttons button {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Test de Generación de PDFs - Producción</h1>
+        
+        <div class="status-bar">
+            <span id="connectionStatus">🔴 Desconectado</span>
+            <span id="authStatus">🔑 No autenticado</span>
+            <span>🌐 Entorno: Producción (validador.usiv.cl)</span>
+        </div>
+
+        <!-- Sección de Autenticación -->
+        <div class="auth-section">
+            <h2>🔐 Autenticación de Producción</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: end;">
+                <div>
+                    <label>Usuario:</label>
+                    <input type="text" id="username" value="admin">
+                </div>
+                <div>
+                    <label>Contraseña:</label>
+                    <input type="password" id="password" value="UsivAdmin2025!">
+                </div>
+                <button onclick="authenticate()" style="width: auto; padding: 12px 20px;">Autenticar</button>
+            </div>
+            <div id="authResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Grid de Tests -->
+        <div class="test-grid">
+            <!-- Test 1: Certificado Académico -->
+            <div class="test-card">
+                <h3>🎓 Certificado Académico</h3>
+                <div class="preset-buttons">
+                    <button onclick="loadPreset('academic')">Cargar Preset</button>
+                    <button onclick="clearForm('academic')">Limpiar</button>
+                </div>
+                <input type="text" id="academic_title" placeholder="Título del certificado">
+                <input type="text" id="academic_student" placeholder="Nombre del estudiante">
+                <input type="text" id="academic_course" placeholder="Curso/Programa">
+                <input type="text" id="academic_institution" placeholder="Institución">
+                <textarea id="academic_content" placeholder="Contenido del certificado"></textarea>
+                <select id="academic_type">
+                    <option value="certificado">Certificado</option>
+                    <option value="diploma">Diploma</option>
+                    <option value="titulo">Título</option>
+                </select>
+                <button onclick="generatePDF('academic')">Generar Certificado</button>
+                <div id="academic_result" class="result" style="display:none;"></div>
+            </div>
+
+            <!-- Test 2: Documento Legal -->
+            <div class="test-card">
+                <h3>⚖️ Documento Legal</h3>
+                <div class="preset-buttons">
+                    <button onclick="loadPreset('legal')">Cargar Preset</button>
+                    <button onclick="clearForm('legal')">Limpiar</button>
+                </div>
+                <input type="text" id="legal_title" placeholder="Título del documento">
+                <input type="text" id="legal_party1" placeholder="Primera parte">
+                <input type="text" id="legal_party2" placeholder="Segunda parte">
+                <input type="text" id="legal_notary" placeholder="Notario">
+                <textarea id="legal_content" placeholder="Contenido del documento legal"></textarea>
+                <select id="legal_type">
+                    <option value="contrato">Contrato</option>
+                    <option value="acuerdo">Acuerdo</option>
+                    <option value="declaracion">Declaración</option>
+                </select>
+                <button onclick="generatePDF('legal')">Generar Documento</button>
+                <div id="legal_result" class="result" style="display:none;"></div>
+            </div>
+
+            <!-- Test 3: Reporte Técnico -->
+            <div class="test-card">
+                <h3>🔬 Reporte Técnico</h3>
+                <div class="preset-buttons">
+                    <button onclick="loadPreset('technical')">Cargar Preset</button>
+                    <button onclick="clearForm('technical')">Limpiar</button>
+                </div>
+                <input type="text" id="technical_title" placeholder="Título del reporte">
+                <input type="text" id="technical_author" placeholder="Autor del reporte">
+                <input type="text" id="technical_department" placeholder="Departamento">
+                <input type="text" id="technical_project" placeholder="Proyecto">
+                <textarea id="technical_content" placeholder="Contenido del reporte técnico"></textarea>
+                <select id="technical_type">
+                    <option value="informe">Informe</option>
+                    <option value="analisis">Análisis</option>
+                    <option value="evaluacion">Evaluación</option>
+                </select>
+                <button onclick="generatePDF('technical')">Generar Reporte</button>
+                <div id="technical_result" class="result" style="display:none;"></div>
+            </div>
+
+            <!-- Test 4: Documento Personalizado -->
+            <div class="test-card">
+                <h3>🎨 Documento Personalizado</h3>
+                <div class="preset-buttons">
+                    <button onclick="loadPreset('custom')">Cargar Preset</button>
+                    <button onclick="clearForm('custom')">Limpiar</button>
+                </div>
+                <input type="text" id="custom_title" placeholder="Título personalizado">
+                <input type="text" id="custom_author" placeholder="Autor">
+                <input type="text" id="custom_organization" placeholder="Organización">
+                <input type="text" id="custom_metadata" placeholder="Metadatos adicionales">
+                <textarea id="custom_content" placeholder="Contenido personalizado"></textarea>
+                <select id="custom_type">
+                    <option value="documento">Documento</option>
+                    <option value="certificacion">Certificación</option>
+                    <option value="constancia">Constancia</option>
+                </select>
+                <button onclick="generatePDF('custom')">Generar Personalizado</button>
+                <div id="custom_result" class="result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Sección de Pruebas Masivas -->
+        <div class="test-card" style="margin-top: 20px;">
+            <h3>🚀 Pruebas de Rendimiento</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
+                <div>
+                    <label>Cantidad de PDFs:</label>
+                    <input type="number" id="batchCount" value="5" min="1" max="20">
+                </div>
+                <div>
+                    <label>Intervalo (ms):</label>
+                    <input type="number" id="batchInterval" value="1000" min="100" max="5000">
+                </div>
+                <div>
+                    <label>Tipo de documento:</label>
+                    <select id="batchType">
+                        <option value="academic">Académico</option>
+                        <option value="legal">Legal</option>
+                        <option value="technical">Técnico</option>
+                        <option value="custom">Personalizado</option>
+                    </select>
+                </div>
+                <button onclick="runBatchTest()" style="width: auto; padding: 12px 20px;">Ejecutar Lote</button>
+            </div>
+            <div id="batch_result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://validador.usiv.cl/pdf-signer';
+        let authToken = '';
+        let batchRunning = false;
+
+        // Presets de datos para diferentes tipos de documentos
+        const presets = {
+            academic: {
+                title: 'Certificado de Finalización de Curso',
+                student: 'Juan Carlos Pérez González',
+                course: 'Desarrollo de Software Avanzado',
+                institution: 'Universidad de Santiago de Chile',
+                content: 'Por medio del presente certificado, se hace constar que el estudiante Juan Carlos Pérez González ha completado satisfactoriamente el curso de Desarrollo de Software Avanzado, cumpliendo con todos los requisitos académicos establecidos.',
+                type: 'certificado'
+            },
+            legal: {
+                title: 'Contrato de Prestación de Servicios',
+                party1: 'USIV Tecnologías Ltda.',
+                party2: 'Empresa Consultora ABC S.A.',
+                notary: 'María Elena Rodríguez Soto',
+                content: 'En la ciudad de Santiago, a los días del mes de enero del año 2024, comparecen por una parte USIV Tecnologías Ltda. y por otra parte Empresa Consultora ABC S.A., para celebrar el presente contrato de prestación de servicios.',
+                type: 'contrato'
+            },
+            technical: {
+                title: 'Informe de Análisis de Seguridad Digital',
+                author: 'Ing. Carlos Mendoza Silva',
+                department: 'Departamento de Ciberseguridad',
+                project: 'Auditoría de Seguridad 2024',
+                content: 'El presente informe detalla los resultados del análisis de seguridad digital realizado en los sistemas de información de la organización, identificando vulnerabilidades y recomendaciones de mejora.',
+                type: 'informe'
+            },
+            custom: {
+                title: 'Constancia de Participación en Evento',
+                author: 'Comité Organizador',
+                organization: 'USIV - Universidad de Santiago',
+                metadata: 'Evento: Seminario de Innovación Tecnológica 2024',
+                content: 'Se otorga la presente constancia a quien participó activamente en el Seminario de Innovación Tecnológica 2024, demostrando interés y compromiso con el desarrollo profesional.',
+                type: 'constancia'
+            }
+        };
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        function showLoading(elementId, message = '🔄 Procesando...') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="loading"></div> ${message}`;
+            element.className = 'result info';
+            element.style.display = 'block';
+        }
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = connected ? '🟢 Conectado' : '🔴 Desconectado';
+        }
+
+        function updateAuthStatus(authenticated) {
+            const status = document.getElementById('authStatus');
+            status.textContent = authenticated ? '🟢 Autenticado' : '🔑 No autenticado';
+        }
+
+        async function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showLoading('authResult', 'Autenticando...');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    updateConnectionStatus(true);
+                    updateAuthStatus(true);
+                    showResult('authResult', 
+                        `✅ Autenticación exitosa\n` +
+                        `👤 Usuario: ${username}\n` +
+                        `🔑 Token: ${authToken.substring(0, 30)}...\n` +
+                        `⏰ Conectado: ${new Date().toLocaleString()}`, 'success');
+                } else {
+                    const error = await response.text();
+                    updateAuthStatus(false);
+                    showResult('authResult', `❌ Error de autenticación: ${error}`, 'error');
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+                updateAuthStatus(false);
+                showResult('authResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        function loadPreset(type) {
+            const preset = presets[type];
+            if (!preset) return;
+
+            Object.keys(preset).forEach(key => {
+                const element = document.getElementById(`${type}_${key}`);
+                if (element) {
+                    element.value = preset[key];
+                }
+            });
+        }
+
+        function clearForm(type) {
+            const elements = document.querySelectorAll(`[id^="${type}_"]`);
+            elements.forEach(element => {
+                if (element.tagName === 'SELECT') {
+                    element.selectedIndex = 0;
+                } else {
+                    element.value = '';
+                }
+            });
+        }
+
+        async function generatePDF(type) {
+            if (!authToken) {
+                showResult(`${type}_result`, '❌ Debe autenticarse primero', 'error');
+                return;
+            }
+
+            // Recopilar datos del formulario
+            const formData = {};
+            const elements = document.querySelectorAll(`[id^="${type}_"]`);
+            elements.forEach(element => {
+                const key = element.id.replace(`${type}_`, '');
+                formData[key] = element.value;
+            });
+
+            // Construir el objeto de solicitud
+            const requestData = {
+                title: formData.title || `Documento ${type}`,
+                content: formData.content || 'Contenido del documento',
+                author: formData.author || formData.student || formData.party1 || 'USIV',
+                documentType: formData.type || type,
+                reason: `Documento ${type} generado para pruebas`,
+                location: 'Chile',
+                metadata: {
+                    createdBy: 'Test Client',
+                    createdAt: new Date().toISOString(),
+                    version: '1.0',
+                    category: type,
+                    ...formData
+                }
+            };
+
+            showLoading(`${type}_result`, 'Generando y firmando PDF...');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/pdf/generate-and-sign`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${formData.title?.replace(/\s+/g, '_') || type}_${Date.now()}.pdf`;
+                    a.click();
+                    
+                    showResult(`${type}_result`, 
+                        `✅ PDF generado exitosamente\n` +
+                        `📄 Título: ${requestData.title}\n` +
+                        `👤 Autor: ${requestData.author}\n` +
+                        `📋 Tipo: ${requestData.documentType}\n` +
+                        `⏰ Generado: ${new Date().toLocaleString()}\n` +
+                        `💾 Descargado automáticamente`, 'success');
+                } else {
+                    const error = await response.text();
+                    showResult(`${type}_result`, `❌ Error al generar PDF: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult(`${type}_result`, `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function runBatchTest() {
+            if (!authToken) {
+                showResult('batch_result', '❌ Debe autenticarse primero', 'error');
+                return;
+            }
+
+            if (batchRunning) {
+                showResult('batch_result', '⚠️ Ya hay una prueba en lote ejecutándose', 'warning');
+                return;
+            }
+
+            const count = parseInt(document.getElementById('batchCount').value);
+            const interval = parseInt(document.getElementById('batchInterval').value);
+            const type = document.getElementById('batchType').value;
+
+            batchRunning = true;
+            let successCount = 0;
+            let errorCount = 0;
+            const startTime = Date.now();
+
+            showLoading('batch_result', `Iniciando prueba en lote: ${count} documentos...`);
+
+            for (let i = 1; i <= count; i++) {
+                try {
+                    const preset = presets[type];
+                    const requestData = {
+                        title: `${preset.title} - Lote ${i}`,
+                        content: `${preset.content} (Documento ${i} de ${count})`,
+                        author: preset.author || preset.student || preset.party1 || 'USIV',
+                        documentType: preset.type,
+                        reason: `Documento de prueba en lote ${i}/${count}`,
+                        location: 'Chile',
+                        metadata: {
+                            createdBy: 'Batch Test Client',
+                            createdAt: new Date().toISOString(),
+                            batchNumber: i,
+                            totalBatch: count,
+                            category: type
+                        }
+                    };
+
+                    const response = await fetch(`${BASE_URL}/api/pdf/generate-and-sign`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                        showResult('batch_result', 
+                            `🔄 Progreso: ${i}/${count}\n` +
+                            `✅ Exitosos: ${successCount}\n` +
+                            `❌ Errores: ${errorCount}\n` +
+                            `⏱️ Tiempo transcurrido: ${((Date.now() - startTime) / 1000).toFixed(1)}s`, 'info');
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    errorCount++;
+                }
+
+                // Esperar antes del siguiente documento (excepto en el último)
+                if (i < count) {
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                }
+            }
+
+            const totalTime = (Date.now() - startTime) / 1000;
+            const avgTime = totalTime / count;
+
+            batchRunning = false;
+            showResult('batch_result', 
+                `🏁 Prueba en lote completada\n` +
+                `📊 Resultados:\n` +
+                `   • Total: ${count} documentos\n` +
+                `   • Exitosos: ${successCount}\n` +
+                `   • Errores: ${errorCount}\n` +
+                `   • Tasa de éxito: ${((successCount/count)*100).toFixed(1)}%\n` +
+                `⏱️ Tiempos:\n` +
+                `   • Total: ${totalTime.toFixed(1)}s\n` +
+                `   • Promedio por documento: ${avgTime.toFixed(2)}s\n` +
+                `   • Documentos por minuto: ${(60/avgTime).toFixed(1)}`, 
+                successCount === count ? 'success' : 'warning');
+        }
+
+        // Auto-cargar presets al cargar la página
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                loadPreset('academic');
+                loadPreset('legal');
+                loadPreset('technical');
+                loadPreset('custom');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

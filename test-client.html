@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente de Prueba - USIV PDF Signer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        input[type="file"], input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Cliente de Prueba - USIV PDF Signer</h1>
+        
+        <!-- Sección de Autenticación -->
+        <div class="section">
+            <h2>🔑 Autenticación</h2>
+            <input type="text" id="username" placeholder="Usuario" value="admin">
+            <input type="password" id="password" placeholder="Contraseña" value="UsivAdmin2025!">
+            <button onclick="authenticate()">Autenticar</button>
+            <div id="authResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Sección de Health Check -->
+        <div class="section">
+            <h2>❤️ Health Check</h2>
+            <button onclick="checkHealth()">Verificar Estado del Servicio</button>
+            <div id="healthResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Sección de Firma de PDF -->
+        <div class="section">
+            <h2>📄 Firmar PDF</h2>
+            <input type="file" id="pdfFile" accept=".pdf">
+            <input type="text" id="reason" placeholder="Razón de la firma" value="Documento firmado digitalmente">
+            <input type="text" id="location" placeholder="Ubicación" value="Chile">
+            <button onclick="signPdf()">Firmar PDF</button>
+            <div id="signResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Sección de Verificación de PDF -->
+        <div class="section">
+            <h2>✅ Verificar PDF</h2>
+            <input type="file" id="verifyPdfFile" accept=".pdf">
+            <button onclick="verifyPdf()">Verificar Firma</button>
+            <div id="verifyResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Sección de Generación y Firma de PDF -->
+        <div class="section">
+            <h2>📋 Generar y Firmar PDF</h2>
+            <input type="text" id="documentTitle" placeholder="Título del documento" value="Documento de Prueba">
+            <input type="text" id="documentContent" placeholder="Contenido del documento" value="Este es un documento de prueba generado automáticamente">
+            <input type="text" id="authorName" placeholder="Nombre del autor" value="USIV">
+            <input type="text" id="documentType" placeholder="Tipo de documento" value="Certificado">
+            <input type="text" id="generateReason" placeholder="Razón de generación" value="Documento generado para pruebas">
+            <input type="text" id="generateLocation" placeholder="Ubicación" value="Chile">
+            <button onclick="generateAndSignPdf()">Generar y Firmar PDF</button>
+            <div id="generateResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Sección de Información del Sistema -->
+        <div class="section">
+            <h2>ℹ️ Información del Sistema</h2>
+            <button onclick="getSystemInfo()">Obtener Información</button>
+            <div id="systemInfoResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://validador.usiv.cl/pdf-signer';
+        let authToken = '';
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        async function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    showResult('authResult', `✅ Autenticación exitosa\nToken: ${authToken.substring(0, 50)}...`, 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('authResult', `❌ Error de autenticación: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${BASE_URL}/actuator/health`);
+                const data = await response.json();
+                showResult('healthResult', `✅ Estado: ${data.status}\n${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('healthResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function signPdf() {
+            if (!authToken) {
+                showResult('signResult', '❌ Debe autenticarse primero', 'error');
+                return;
+            }
+
+            const fileInput = document.getElementById('pdfFile');
+            const reason = document.getElementById('reason').value;
+            const location = document.getElementById('location').value;
+            
+            if (!fileInput.files[0]) {
+                showResult('signResult', '❌ Debe seleccionar un archivo PDF', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('reason', reason);
+            formData.append('location', location);
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/pdf/sign`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'documento_firmado.pdf';
+                    a.click();
+                    showResult('signResult', '✅ PDF firmado y descargado exitosamente', 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('signResult', `❌ Error al firmar: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('signResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifyPdf() {
+            if (!authToken) {
+                showResult('verifyResult', '❌ Debe autenticarse primero', 'error');
+                return;
+            }
+
+            const fileInput = document.getElementById('verifyPdfFile');
+            
+            if (!fileInput.files[0]) {
+                showResult('verifyResult', '❌ Debe seleccionar un archivo PDF', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/pdf/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('verifyResult', `✅ Verificación completada:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('verifyResult', `❌ Error al verificar: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('verifyResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function generateAndSignPdf() {
+            if (!authToken) {
+                showResult('generateResult', '❌ Debe autenticarse primero', 'error');
+                return;
+            }
+
+            const documentTitle = document.getElementById('documentTitle').value;
+            const documentContent = document.getElementById('documentContent').value;
+            const authorName = document.getElementById('authorName').value;
+            const documentType = document.getElementById('documentType').value;
+            const reason = document.getElementById('generateReason').value;
+            const location = document.getElementById('generateLocation').value;
+
+            const requestData = {
+                title: documentTitle,
+                content: documentContent,
+                author: authorName,
+                documentType: documentType,
+                reason: reason,
+                location: location,
+                metadata: {
+                    createdBy: 'Test Client',
+                    createdAt: new Date().toISOString(),
+                    version: '1.0'
+                }
+            };
+
+            try {
+                showResult('generateResult', '🔄 Generando y firmando PDF...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/api/pdf/generate-and-sign`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${documentTitle.replace(/\s+/g, '_')}_firmado.pdf`;
+                    a.click();
+                    
+                    showResult('generateResult', 
+                        `✅ PDF generado y firmado exitosamente\n` +
+                        `📄 Título: ${documentTitle}\n` +
+                        `👤 Autor: ${authorName}\n` +
+                        `📋 Tipo: ${documentType}\n` +
+                        `📍 Ubicación: ${location}\n` +
+                        `💾 Archivo descargado automáticamente`, 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('generateResult', `❌ Error al generar PDF: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('generateResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function getSystemInfo() {
+            try {
+                const response = await fetch(`${BASE_URL}/actuator/info`);
+                const data = await response.json();
+                showResult('systemInfoResult', `ℹ️ Información del sistema:\n${JSON.stringify(data, null, 2)}`, 'info');
+            } catch (error) {
+                showResult('systemInfoResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

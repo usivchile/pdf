@@ -1,0 +1,48 @@
+{
+  "groups": [
+    {
+      "name": "api",
+      "type": "com.usiv.config.AuthProperties",
+      "sourceType": "com.usiv.config.AuthProperties"
+    },
+    {
+      "name": "api.admin",
+      "type": "com.usiv.config.AuthProperties$Admin",
+      "sourceType": "com.usiv.config.AuthProperties",
+      "sourceMethod": "getAdmin()"
+    },
+    {
+      "name": "api.user",
+      "type": "com.usiv.config.AuthProperties$User",
+      "sourceType": "com.usiv.config.AuthProperties",
+      "sourceMethod": "getUser()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "api.admin.password",
+      "type": "java.lang.String",
+      "sourceType": "com.usiv.config.AuthProperties$Admin",
+      "defaultValue": "UsivAdmin2025!"
+    },
+    {
+      "name": "api.admin.username",
+      "type": "java.lang.String",
+      "sourceType": "com.usiv.config.AuthProperties$Admin",
+      "defaultValue": "admin"
+    },
+    {
+      "name": "api.user.password",
+      "type": "java.lang.String",
+      "sourceType": "com.usiv.config.AuthProperties$User",
+      "defaultValue": "user123"
+    },
+    {
+      "name": "api.user.username",
+      "type": "java.lang.String",
+      "sourceType": "com.usiv.config.AuthProperties$User",
+      "defaultValue": "user"
+    }
+  ],
+  "hints": []
+}

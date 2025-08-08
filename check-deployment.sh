@@ -67,7 +67,7 @@ fi
 
 # 2. Verificar logs de Tomcat
 echo -e "\n${PURPLE}2. VERIFICANDO LOGS DE TOMCAT${NC}"
-TOMCAT_LOG="/opt/tomcat/logs/catalina.out"
+TOMCAT_LOG="/var/lib/tomcat/logs/catalina.out"
 if [ -f "$TOMCAT_LOG" ]; then
     log_info "Últimas líneas del log de Tomcat:"
     echo -e "${YELLOW}$(tail -10 $TOMCAT_LOG)${NC}"
@@ -86,8 +86,8 @@ fi
 
 # 3. Verificar aplicación WAR desplegada
 echo -e "\n${PURPLE}3. VERIFICANDO APLICACIÓN WAR${NC}"
-WAR_PATH="/opt/tomcat/webapps/pdf-signer-war-1.0.war"
-APP_DIR="/opt/tomcat/webapps/pdf-signer-war-1.0"
+WAR_PATH="/var/lib/tomcat/webapps/pdf-signer-war-1.0.war"
+APP_DIR="/var/lib/tomcat/webapps/pdf-signer-war-1.0"
 
 if [ -f "$WAR_PATH" ]; then
     WAR_SIZE=$(du -h "$WAR_PATH" | cut -f1)
@@ -170,8 +170,8 @@ else
 fi
 
 # Verificar que nuestro Tomcat esté en el directorio correcto
-if [ -d "/opt/tomcat" ]; then
-    TOMCAT_OWNER=$(ls -ld /opt/tomcat | awk '{print $3}')
+if [ -d "/var/lib/tomcat" ]; then
+    TOMCAT_OWNER=$(ls -ld /var/lib/tomcat | awk '{print $3}')
     log_info "Propietario del directorio Tomcat: $TOMCAT_OWNER"
     
     if [ "$TOMCAT_OWNER" = "tomcat" ]; then
@@ -276,7 +276,7 @@ echo -e "${CYAN}Comandos que puedes ejecutar para más información:${NC}"
 echo -e "${GREEN}# Ver estado de servicios${NC}"
 echo -e "${GREEN}systemctl status tomcat nginx${NC}"
 echo -e "${GREEN}# Ver logs en tiempo real${NC}"
-echo -e "${GREEN}tail -f /opt/tomcat/logs/catalina.out${NC}"
+echo -e "${GREEN}tail -f /var/lib/tomcat/logs/catalina.out${NC}"
 echo -e "${GREEN}# Ver procesos Java${NC}"
 echo -e "${GREEN}ps aux | grep java${NC}"
 echo -e "${GREEN}# Ver puertos en uso${NC}"
@@ -293,7 +293,7 @@ echo -e "\n${PURPLE}=== RESUMEN DEL SISTEMA ===${NC}"
 echo -e "${GREEN}Estado de Tomcat: $(systemctl is-active tomcat 2>/dev/null || echo 'No configurado como servicio')${NC}"
 echo -e "${GREEN}Instancias de Tomcat: $TOMCAT_COUNT${NC}"
 echo -e "${GREEN}Puerto Tomcat: $(netstat -tlnp | grep ':8080' | wc -l) conexiones${NC}"
-echo -e "${GREEN}Aplicación desplegada: $([ -f '/opt/tomcat/webapps/pdf-signer-war-1.0.war' ] && echo 'Sí' || echo 'No')${NC}"
+echo -e "${GREEN}Aplicación desplegada: $([ -f '/var/lib/tomcat/webapps/pdf-signer-war-1.0.war' ] && echo 'Sí' || echo 'No')${NC}"
 echo -e "${GREEN}Estado de Nginx: $(systemctl is-active nginx 2>/dev/null || echo 'No instalado')${NC}"
 echo -e "${GREEN}Redirección HTTP→HTTPS: $(curl -s -I --connect-timeout 5 http://localhost/ 2>/dev/null | head -1 | grep -q '301\|302' && echo 'Configurada' || echo 'No configurada')${NC}"
 echo -e "${GREEN}Certificado SSL: $([ -f '/etc/letsencrypt/live/*/fullchain.pem' ] && echo 'Configurado' || echo 'No configurado')${NC}"
@@ -339,7 +339,7 @@ elif [ "$TOMCAT_OK" = true ] && [ "$APP_OK" = false ]; then
     echo -e "${YELLOW}  - Aplicación aún se está iniciando${NC}"
     echo -e "${YELLOW}  - Error en el despliegue del WAR${NC}"
     echo -e "${YELLOW}  - Problemas de configuración${NC}"
-    echo -e "${YELLOW}Revisa los logs: tail -f /opt/tomcat/logs/catalina.out${NC}"
+    echo -e "${YELLOW}Revisa los logs: tail -f /var/lib/tomcat/logs/catalina.out${NC}"
 elif [ "$TOMCAT_OK" = false ]; then
     log_error "❌ TOMCAT NO ESTÁ EJECUTÁNDOSE"
     echo -e "${RED}El servidor Tomcat no está activo${NC}"

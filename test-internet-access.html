@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Acceso a Internet - USIV PDF Service</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .test-section:hover {
+            border-color: #3498db;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+        .test-section h2 {
+            color: #34495e;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 2px solid #ffeaa7;
+            color: #856404;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #27ae60; }
+        .status-offline { background-color: #e74c3c; }
+        .status-unknown { background-color: #f39c12; }
+        .summary {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .summary h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Test de Acceso a Internet</h1>
+        <p style="text-align: center; color: #7f8c8d; font-size: 1.1em;">Verificación de conectividad y servicios externos para USIV PDF Service</p>
+        
+        <!-- Test de Conectividad Básica -->
+        <div class="test-section">
+            <h2>🔌 Conectividad Básica</h2>
+            <button onclick="testBasicConnectivity()">Probar Conectividad</button>
+            <button onclick="testDNS()">Probar DNS</button>
+            <div id="connectivityResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test de APIs Públicas -->
+        <div class="test-section">
+            <h2>🌍 APIs Públicas</h2>
+            <button onclick="testPublicAPIs()">Probar APIs</button>
+            <button onclick="testTimeAPI()">Probar API de Tiempo</button>
+            <div id="apiResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test de CDNs -->
+        <div class="test-section">
+            <h2>📦 CDNs y Recursos</h2>
+            <button onclick="testCDNs()">Probar CDNs</button>
+            <button onclick="testGoogleFonts()">Probar Google Fonts</button>
+            <div id="cdnResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test de Servicios de Certificados -->
+        <div class="test-section">
+            <h2>🔐 Servicios de Certificados</h2>
+            <button onclick="testCertificateServices()">Probar Servicios SSL</button>
+            <button onclick="testOCSP()">Probar OCSP</button>
+            <div id="certResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test de Velocidad -->
+        <div class="test-section">
+            <h2>⚡ Test de Velocidad</h2>
+            <button onclick="testSpeed()">Medir Velocidad</button>
+            <button onclick="testLatency()">Medir Latencia</button>
+            <div id="speedResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test del Servicio Local -->
+        <div class="test-section">
+            <h2>🏠 Servicio Local</h2>
+            <button onclick="testLocalService()">Probar Servicio USIV</button>
+            <button onclick="testLocalEndpoints()">Probar Endpoints</button>
+            <div id="localResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Resumen de Resultados -->
+        <div class="summary" id="summary" style="display:none;">
+            <h3>📊 Resumen de Conectividad</h3>
+            <div id="summaryContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {};
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div class="loading"></div> Ejecutando pruebas...';
+            element.className = 'result info';
+            element.style.display = 'block';
+        }
+
+        async function testBasicConnectivity() {
+            showLoading('connectivityResult');
+            let results = [];
+            
+            // Test de conectividad a Google
+            try {
+                const start = Date.now();
+                const response = await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors' });
+                const time = Date.now() - start;
+                results.push(`✅ Google.com: Conectado (${time}ms)`);
+                testResults.google = true;
+            } catch (error) {
+                results.push(`❌ Google.com: Error - ${error.message}`);
+                testResults.google = false;
+            }
+
+            // Test de conectividad a Cloudflare
+            try {
+                const start = Date.now();
+                const response = await fetch('https://1.1.1.1/', { mode: 'no-cors' });
+                const time = Date.now() - start;
+                results.push(`✅ Cloudflare DNS: Conectado (${time}ms)`);
+                testResults.cloudflare = true;
+            } catch (error) {
+                results.push(`❌ Cloudflare DNS: Error - ${error.message}`);
+                testResults.cloudflare = false;
+            }
+
+            showResult('connectivityResult', results.join('\n'), 'info');
+            updateSummary();
+        }
+
+        async function testDNS() {
+            showLoading('connectivityResult');
+            let results = [];
+            
+            // Test de resolución DNS
+            const domains = ['google.com', 'github.com', 'stackoverflow.com'];
+            
+            for (const domain of domains) {
+                try {
+                    const start = Date.now();
+                    await fetch(`https://${domain}/favicon.ico`, { mode: 'no-cors' });
+                    const time = Date.now() - start;
+                    results.push(`✅ DNS ${domain}: Resuelto (${time}ms)`);
+                } catch (error) {
+                    results.push(`❌ DNS ${domain}: Error - ${error.message}`);
+                }
+            }
+
+            showResult('connectivityResult', results.join('\n'), 'info');
+        }
+
+        async function testPublicAPIs() {
+            showLoading('apiResult');
+            let results = [];
+            
+            // Test de JSONPlaceholder
+            try {
+                const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
+                if (response.ok) {
+                    const data = await response.json();
+                    results.push(`✅ JSONPlaceholder API: Funcionando`);
+                    results.push(`   Título: ${data.title.substring(0, 50)}...`);
+                    testResults.jsonplaceholder = true;
+                } else {
+                    results.push(`❌ JSONPlaceholder API: HTTP ${response.status}`);
+                    testResults.jsonplaceholder = false;
+                }
+            } catch (error) {
+                results.push(`❌ JSONPlaceholder API: ${error.message}`);
+                testResults.jsonplaceholder = false;
+            }
+
+            // Test de httpbin
+            try {
+                const response = await fetch('https://httpbin.org/ip');
+                if (response.ok) {
+                    const data = await response.json();
+                    results.push(`✅ HTTPBin API: Funcionando`);
+                    results.push(`   Tu IP: ${data.origin}`);
+                    testResults.httpbin = true;
+                } else {
+                    results.push(`❌ HTTPBin API: HTTP ${response.status}`);
+                    testResults.httpbin = false;
+                }
+            } catch (error) {
+                results.push(`❌ HTTPBin API: ${error.message}`);
+                testResults.httpbin = false;
+            }
+
+            showResult('apiResult', results.join('\n'), 'info');
+            updateSummary();
+        }
+
+        async function testTimeAPI() {
+            showLoading('apiResult');
+            let results = [];
+            
+            try {
+                const response = await fetch('https://worldtimeapi.org/api/timezone/America/Santiago');
+                if (response.ok) {
+                    const data = await response.json();
+                    results.push(`✅ World Time API: Funcionando`);
+                    results.push(`   Zona horaria: ${data.timezone}`);
+                    results.push(`   Fecha/Hora: ${data.datetime}`);
+                    testResults.timeapi = true;
+                } else {
+                    results.push(`❌ World Time API: HTTP ${response.status}`);
+                    testResults.timeapi = false;
+                }
+            } catch (error) {
+                results.push(`❌ World Time API: ${error.message}`);
+                testResults.timeapi = false;
+            }
+
+            showResult('apiResult', results.join('\n'), 'info');
+        }
+
+        async function testCDNs() {
+            showLoading('cdnResult');
+            let results = [];
+            
+            const cdns = [
+                { name: 'jQuery CDN', url: 'https://code.jquery.com/jquery-3.6.0.min.js' },
+                { name: 'Bootstrap CDN', url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css' },
+                { name: 'Font Awesome', url: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css' }
+            ];
+
+            for (const cdn of cdns) {
+                try {
+                    const start = Date.now();
+                    const response = await fetch(cdn.url, { method: 'HEAD' });
+                    const time = Date.now() - start;
+                    if (response.ok) {
+                        results.push(`✅ ${cdn.name}: Disponible (${time}ms)`);
+                    } else {
+                        results.push(`❌ ${cdn.name}: HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${cdn.name}: ${error.message}`);
+                }
+            }
+
+            showResult('cdnResult', results.join('\n'), 'info');
+        }
+
+        async function testGoogleFonts() {
+            showLoading('cdnResult');
+            let results = [];
+            
+            try {
+                const response = await fetch('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+                if (response.ok) {
+                    results.push(`✅ Google Fonts: Disponible`);
+                    results.push(`   Content-Type: ${response.headers.get('content-type')}`);
+                } else {
+                    results.push(`❌ Google Fonts: HTTP ${response.status}`);
+                }
+            } catch (error) {
+                results.push(`❌ Google Fonts: ${error.message}`);
+            }
+
+            showResult('cdnResult', results.join('\n'), 'info');
+        }
+
+        async function testCertificateServices() {
+            showLoading('certResult');
+            let results = [];
+            
+            // Test de Let's Encrypt
+            try {
+                const response = await fetch('https://letsencrypt.org/', { method: 'HEAD' });
+                if (response.ok) {
+                    results.push(`✅ Let's Encrypt: Accesible`);
+                } else {
+                    results.push(`❌ Let's Encrypt: HTTP ${response.status}`);
+                }
+            } catch (error) {
+                results.push(`❌ Let's Encrypt: ${error.message}`);
+            }
+
+            // Test de DigiCert
+            try {
+                const response = await fetch('https://www.digicert.com/', { method: 'HEAD' });
+                if (response.ok) {
+                    results.push(`✅ DigiCert: Accesible`);
+                } else {
+                    results.push(`❌ DigiCert: HTTP ${response.status}`);
+                }
+            } catch (error) {
+                results.push(`❌ DigiCert: ${error.message}`);
+            }
+
+            showResult('certResult', results.join('\n'), 'info');
+        }
+
+        async function testOCSP() {
+            showLoading('certResult');
+            let results = [];
+            
+            results.push(`ℹ️ OCSP (Online Certificate Status Protocol)`);
+            results.push(`   Los servicios OCSP requieren certificados específicos para probar`);
+            results.push(`   En un entorno de producción, esto se probaría automáticamente`);
+            
+            showResult('certResult', results.join('\n'), 'warning');
+        }
+
+        async function testSpeed() {
+            showLoading('speedResult');
+            let results = [];
+            
+            // Test de descarga de un archivo pequeño
+            try {
+                const start = Date.now();
+                const response = await fetch('https://httpbin.org/bytes/1024'); // 1KB
+                const data = await response.arrayBuffer();
+                const time = Date.now() - start;
+                const speed = (data.byteLength / 1024) / (time / 1000); // KB/s
+                
+                results.push(`✅ Test de velocidad completado`);
+                results.push(`   Archivo: 1KB`);
+                results.push(`   Tiempo: ${time}ms`);
+                results.push(`   Velocidad: ${speed.toFixed(2)} KB/s`);
+            } catch (error) {
+                results.push(`❌ Test de velocidad: ${error.message}`);
+            }
+
+            showResult('speedResult', results.join('\n'), 'info');
+        }
+
+        async function testLatency() {
+            showLoading('speedResult');
+            let results = [];
+            
+            const servers = [
+                { name: 'Google', url: 'https://www.google.com/favicon.ico' },
+                { name: 'Cloudflare', url: 'https://1.1.1.1/' },
+                { name: 'GitHub', url: 'https://github.com/favicon.ico' }
+            ];
+
+            for (const server of servers) {
+                try {
+                    const start = Date.now();
+                    await fetch(server.url, { mode: 'no-cors' });
+                    const latency = Date.now() - start;
+                    results.push(`📡 ${server.name}: ${latency}ms`);
+                } catch (error) {
+                    results.push(`❌ ${server.name}: Error`);
+                }
+            }
+
+            showResult('speedResult', results.join('\n'), 'info');
+        }
+
+        async function testLocalService() {
+            showLoading('localResult');
+            let results = [];
+            
+            const baseUrl = 'https://validador.usiv.cl/pdf-signer';
+            
+            // Test de health endpoint
+            try {
+                const response = await fetch(`${baseUrl}/actuator/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    results.push(`✅ Health Endpoint: ${data.status}`);
+                    testResults.localHealth = true;
+                } else {
+                    results.push(`❌ Health Endpoint: HTTP ${response.status}`);
+                    testResults.localHealth = false;
+                }
+            } catch (error) {
+                results.push(`❌ Health Endpoint: ${error.message}`);
+                testResults.localHealth = false;
+            }
+
+            // Test de info endpoint
+            try {
+                const response = await fetch(`${baseUrl}/actuator/info`);
+                if (response.ok) {
+                    const data = await response.json();
+                    results.push(`✅ Info Endpoint: Disponible`);
+                    if (data.app) {
+                        results.push(`   App: ${data.app.name || 'N/A'} v${data.app.version || 'N/A'}`);
+                    }
+                } else {
+                    results.push(`❌ Info Endpoint: HTTP ${response.status}`);
+                }
+            } catch (error) {
+                results.push(`❌ Info Endpoint: ${error.message}`);
+            }
+
+            showResult('localResult', results.join('\n'), 'info');
+            updateSummary();
+        }
+
+        async function testLocalEndpoints() {
+            showLoading('localResult');
+            let results = [];
+            
+            const baseUrl = 'https://validador.usiv.cl/pdf-signer';
+            const endpoints = [
+                '/actuator',
+                '/actuator/health',
+                '/actuator/info',
+                '/swagger-ui/index.html',
+                '/api-docs'
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${baseUrl}${endpoint}`);
+                    if (response.ok) {
+                        results.push(`✅ ${endpoint}: Disponible`);
+                    } else {
+                        results.push(`❌ ${endpoint}: HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${endpoint}: ${error.message}`);
+                }
+            }
+
+            showResult('localResult', results.join('\n'), 'info');
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const content = document.getElementById('summaryContent');
+            
+            let totalTests = Object.keys(testResults).length;
+            let passedTests = Object.values(testResults).filter(result => result === true).length;
+            
+            if (totalTests > 0) {
+                let status = passedTests === totalTests ? 'success' : passedTests > totalTests / 2 ? 'warning' : 'error';
+                let statusIcon = passedTests === totalTests ? '✅' : passedTests > totalTests / 2 ? '⚠️' : '❌';
+                
+                content.innerHTML = `
+                    <div class="${status}" style="padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>${statusIcon} Estado General: ${passedTests}/${totalTests} pruebas exitosas</strong>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        ${Object.entries(testResults).map(([test, result]) => 
+                            `<div><span class="status-indicator status-${result ? 'online' : 'offline'}"></span>${test}: ${result ? 'OK' : 'FALLO'}</div>`
+                        ).join('')}
+                    </div>
+                `;
+                
+                summary.style.display = 'block';
+            }
+        }
+
+        // Auto-ejecutar test básico al cargar la página
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testBasicConnectivity();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

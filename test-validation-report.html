@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Informe de Validación - USIV Production</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .auth-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #e74c3c;
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #27ae60;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        input[type="text"], input[type="password"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .preset-buttons button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 2px solid #ffeaa7;
+            color: #856404;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #e74c3c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-bar {
+            background: #34495e;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .endpoint-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .endpoint-info code {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Test Informe de Validación Geográfica</h1>
+        
+        <div class="status-bar">
+            <span id="connectionStatus">🔴 Desconectado</span>
+            <span id="authStatus">🔑 No autenticado</span>
+            <span>🌐 Entorno: Producción (validador.usiv.cl)</span>
+        </div>
+
+        <div class="endpoint-info">
+            <h3>📡 Información del Endpoint</h3>
+            <p><strong>URL:</strong> <code>POST /firmar</code></p>
+            <p><strong>Descripción:</strong> Genera un informe técnico de verificación geográfica con todos los datos de validación de ubicación e identidad.</p>
+            <p><strong>Respuesta:</strong> PDF firmado digitalmente en formato Base64</p>
+        </div>
+
+        <!-- Sección de Autenticación -->
+        <div class="auth-section">
+            <h2>🔐 Autenticación de Producción</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: end;">
+                <div>
+                    <label>Usuario:</label>
+                    <input type="text" id="username" value="admin">
+                </div>
+                <div>
+                    <label>Contraseña:</label>
+                    <input type="password" id="password" value="UsivAdmin2025!">
+                </div>
+                <button onclick="authenticate()" style="width: auto; padding: 12px 20px;">Autenticar</button>
+            </div>
+            <div id="authResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Formulario de Datos de Validación -->
+        <div class="form-section">
+            <h2>👤 Datos del Paciente y Validación</h2>
+            
+            <div class="preset-buttons">
+                <button onclick="loadDefaultData()">📋 Cargar Datos de Ejemplo</button>
+                <button onclick="loadTestCase1()">🧪 Caso de Prueba 1</button>
+                <button onclick="loadTestCase2()">🧪 Caso de Prueba 2</button>
+                <button onclick="clearAllFields()">🗑️ Limpiar Todo</button>
+            </div>
+
+            <div class="form-grid">
+                <!-- Datos del Paciente -->
+                <div class="form-group">
+                    <label>Nombre del Afiliado:</label>
+                    <input type="text" id="nombre" placeholder="Nombre completo del paciente">
+                </div>
+                <div class="form-group">
+                    <label>RUT:</label>
+                    <input type="text" id="rut" placeholder="12.345.678-9">
+                </div>
+                <div class="form-group">
+                    <label>Número de Licencia:</label>
+                    <input type="text" id="numeroLicencia" placeholder="LM123456">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Licencia:</label>
+                    <input type="text" id="fechaLicencia" placeholder="DD/MM/YYYY">
+                </div>
+                <div class="form-group">
+                    <label>Sistema de Salud:</label>
+                    <select id="sistemaSalud">
+                        <option value="">Seleccionar...</option>
+                        <option value="Fonasa">Fonasa</option>
+                        <option value="Isapre">Isapre</option>
+                        <option value="Particular">Particular</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha y Hora de Validación:</label>
+                    <input type="text" id="fechaHoraValidacion" placeholder="YYYY-MM-DD HH:mm:ss">
+                </div>
+
+                <!-- Datos GPS -->
+                <div class="form-group">
+                    <label>Latitud GPS:</label>
+                    <input type="text" id="latitud" placeholder="-33.4489">
+                </div>
+                <div class="form-group">
+                    <label>Longitud GPS:</label>
+                    <input type="text" id="longitud" placeholder="-70.6693">
+                </div>
+                <div class="form-group">
+                    <label>Precisión GPS:</label>
+                    <input type="text" id="precision" placeholder="10 metros">
+                </div>
+                <div class="form-group">
+                    <label>GPS Alterado:</label>
+                    <select id="gpsAlterado">
+                        <option value="">Seleccionar...</option>
+                        <option value="No">No</option>
+                        <option value="Sí">Sí</option>
+                        <option value="Sospechoso">Sospechoso</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Dirección GPS:</label>
+                    <input type="text" id="direccionGps" placeholder="Dirección obtenida por GPS">
+                </div>
+                <div class="form-group">
+                    <label>Domicilio de Reposo:</label>
+                    <input type="text" id="domicilioReposo" placeholder="Dirección registrada">
+                </div>
+                <div class="form-group">
+                    <label>Distancia al Reposo:</label>
+                    <input type="text" id="distanciaReposo" placeholder="2.5 km">
+                </div>
+
+                <!-- Resultados de Validación -->
+                <div class="form-group">
+                    <label>Resultado Geográfico:</label>
+                    <select id="resultadoGeografico">
+                        <option value="">Seleccionar...</option>
+                        <option value="COINCIDE CON DOMICILIO DE REPOSO">COINCIDE CON DOMICILIO DE REPOSO</option>
+                        <option value="NO COINCIDE CON DOMICILIO DE REPOSO">NO COINCIDE CON DOMICILIO DE REPOSO</option>
+                        <option value="DISTANCIA ACEPTABLE">DISTANCIA ACEPTABLE</option>
+                        <option value="DISTANCIA EXCESIVA">DISTANCIA EXCESIVA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Resultado Facial:</label>
+                    <select id="resultadoFacial">
+                        <option value="">Seleccionar...</option>
+                        <option value="VALIDADO">VALIDADO</option>
+                        <option value="NO VALIDADO">NO VALIDADO</option>
+                        <option value="PARCIALMENTE VALIDADO">PARCIALMENTE VALIDADO</option>
+                        <option value="ERROR EN VALIDACIÓN">ERROR EN VALIDACIÓN</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Usuario Gestor:</label>
+                    <input type="text" id="usuarioGestor" placeholder="validador@usiv.cl">
+                </div>
+            </div>
+
+            <!-- Textos Largos -->
+            <div class="form-group">
+                <label>Observaciones:</label>
+                <textarea id="textoObservacion" placeholder="Observaciones del proceso de validación..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Texto de Uso del Informe:</label>
+                <textarea id="textoUsoInforme" placeholder="Descripción del uso permitido del informe..."></textarea>
+            </div>
+
+            <button onclick="generateValidationReport()" style="width: 100%; font-size: 16px; padding: 15px;">🔥 Generar Informe de Validación</button>
+            <div id="generateResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://validador.usiv.cl/pdf-signer';
+        let authToken = '';
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        function showLoading(elementId, message = '🔄 Procesando...') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="loading"></div> ${message}`;
+            element.className = 'result info';
+            element.style.display = 'block';
+        }
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = connected ? '🟢 Conectado' : '🔴 Desconectado';
+        }
+
+        function updateAuthStatus(authenticated) {
+            const status = document.getElementById('authStatus');
+            status.textContent = authenticated ? '🟢 Autenticado' : '🔑 No autenticado';
+        }
+
+        async function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showLoading('authResult', 'Autenticando...');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    updateConnectionStatus(true);
+                    updateAuthStatus(true);
+                    showResult('authResult', 
+                        `✅ Autenticación exitosa\n` +
+                        `👤 Usuario: ${username}\n` +
+                        `🔑 Token: ${authToken.substring(0, 30)}...\n` +
+                        `⏰ Conectado: ${new Date().toLocaleString()}`, 'success');
+                } else {
+                    const error = await response.text();
+                    updateAuthStatus(false);
+                    showResult('authResult', `❌ Error de autenticación: ${error}`, 'error');
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+                updateAuthStatus(false);
+                showResult('authResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        function loadDefaultData() {
+            // Datos exactos del MainApp.java
+            document.getElementById('nombre').value = 'Juan Pérez';
+            document.getElementById('rut').value = '12.345.678-9';
+            document.getElementById('numeroLicencia').value = 'LM123456';
+            document.getElementById('fechaLicencia').value = '05/08/2025';
+            document.getElementById('sistemaSalud').value = 'Fonasa';
+            document.getElementById('fechaHoraValidacion').value = '2025-08-05 10:30:00';
+            document.getElementById('latitud').value = '-33.4489';
+            document.getElementById('longitud').value = '-70.6693';
+            document.getElementById('precision').value = '10 metros';
+            document.getElementById('gpsAlterado').value = 'No';
+            document.getElementById('direccionGps').value = 'Av. Libertador Bernardo O\'Higgins 1234, Santiago, Chile';
+            document.getElementById('domicilioReposo').value = 'Calle Falsa 123, Las Condes, Santiago';
+            document.getElementById('distanciaReposo').value = '2.5 km';
+            document.getElementById('resultadoGeografico').value = 'COINCIDE CON DOMICILIO DE REPOSO';
+            document.getElementById('resultadoFacial').value = 'VALIDADO';
+            document.getElementById('usuarioGestor').value = 'validador@usiv.cl';
+            document.getElementById('textoObservacion').value = 'La validación se realizó sin inconvenientes. El paciente se encontraba en el domicilio registrado.';
+            document.getElementById('textoUsoInforme').value = 'Este informe técnico podrá ser utilizado para fines de fiscalización médica, licencias laborales u otros trámites que requieran verificación de identidad y ubicación.';
+        }
+
+        function loadTestCase1() {
+            document.getElementById('nombre').value = 'María Elena González Soto';
+            document.getElementById('rut').value = '18.765.432-1';
+            document.getElementById('numeroLicencia').value = 'LM987654';
+            document.getElementById('fechaLicencia').value = '15/12/2024';
+            document.getElementById('sistemaSalud').value = 'Isapre';
+            document.getElementById('fechaHoraValidacion').value = '2024-12-15 14:45:30';
+            document.getElementById('latitud').value = '-33.4372';
+            document.getElementById('longitud').value = '-70.6506';
+            document.getElementById('precision').value = '5 metros';
+            document.getElementById('gpsAlterado').value = 'No';
+            document.getElementById('direccionGps').value = 'Av. Providencia 2594, Providencia, Santiago';
+            document.getElementById('domicilioReposo').value = 'Av. Providencia 2600, Providencia, Santiago';
+            document.getElementById('distanciaReposo').value = '0.1 km';
+            document.getElementById('resultadoGeografico').value = 'COINCIDE CON DOMICILIO DE REPOSO';
+            document.getElementById('resultadoFacial').value = 'VALIDADO';
+            document.getElementById('usuarioGestor').value = 'supervisor@usiv.cl';
+            document.getElementById('textoObservacion').value = 'Validación exitosa. La paciente se encuentra en su domicilio registrado con alta precisión GPS.';
+            document.getElementById('textoUsoInforme').value = 'Informe válido para presentación ante instituciones de salud y empleadores.';
+        }
+
+        function loadTestCase2() {
+            document.getElementById('nombre').value = 'Carlos Alberto Mendoza Ruiz';
+            document.getElementById('rut').value = '15.234.567-8';
+            document.getElementById('numeroLicencia').value = 'LM456789';
+            document.getElementById('fechaLicencia').value = '20/01/2025';
+            document.getElementById('sistemaSalud').value = 'Fonasa';
+            document.getElementById('fechaHoraValidacion').value = '2025-01-20 09:15:45';
+            document.getElementById('latitud').value = '-33.4691';
+            document.getElementById('longitud').value = '-70.6420';
+            document.getElementById('precision').value = '15 metros';
+            document.getElementById('gpsAlterado').value = 'Sospechoso';
+            document.getElementById('direccionGps').value = 'Calle San Martín 456, Santiago Centro';
+            document.getElementById('domicilioReposo').value = 'Calle San Martín 450, Santiago Centro';
+            document.getElementById('distanciaReposo').value = '0.05 km';
+            document.getElementById('resultadoGeografico').value = 'DISTANCIA ACEPTABLE';
+            document.getElementById('resultadoFacial').value = 'PARCIALMENTE VALIDADO';
+            document.getElementById('usuarioGestor').value = 'auditor@usiv.cl';
+            document.getElementById('textoObservacion').value = 'Se detectaron indicios de manipulación GPS, pero la ubicación es consistente con el domicilio registrado.';
+            document.getElementById('textoUsoInforme').value = 'Informe requiere revisión adicional antes de su uso oficial.';
+        }
+
+        function clearAllFields() {
+            const inputs = document.querySelectorAll('input[type="text"], textarea, select');
+            inputs.forEach(input => {
+                if (input.tagName === 'SELECT') {
+                    input.selectedIndex = 0;
+                } else {
+                    input.value = '';
+                }
+            });
+        }
+
+        async function generateValidationReport() {
+            if (!authToken) {
+                showResult('generateResult', '❌ Debe autenticarse primero', 'error');
+                return;
+            }
+
+            // Recopilar todos los datos del formulario
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                rut: document.getElementById('rut').value,
+                numeroLicencia: document.getElementById('numeroLicencia').value,
+                fechaLicencia: document.getElementById('fechaLicencia').value,
+                sistemaSalud: document.getElementById('sistemaSalud').value,
+                fechaHoraValidacion: document.getElementById('fechaHoraValidacion').value,
+                latitud: document.getElementById('latitud').value,
+                longitud: document.getElementById('longitud').value,
+                precision: document.getElementById('precision').value,
+                gpsAlterado: document.getElementById('gpsAlterado').value,
+                direccionGps: document.getElementById('direccionGps').value,
+                domicilioReposo: document.getElementById('domicilioReposo').value,
+                distanciaReposo: document.getElementById('distanciaReposo').value,
+                resultadoGeografico: document.getElementById('resultadoGeografico').value,
+                resultadoFacial: document.getElementById('resultadoFacial').value,
+                usuarioGestor: document.getElementById('usuarioGestor').value,
+                textoObservacion: document.getElementById('textoObservacion').value,
+                textoUsoInforme: document.getElementById('textoUsoInforme').value
+            };
+
+            // Validar campos requeridos
+            const requiredFields = ['nombre', 'rut', 'numeroLicencia', 'fechaLicencia', 'sistemaSalud', 
+                                  'fechaHoraValidacion', 'latitud', 'longitud', 'precision', 'gpsAlterado',
+                                  'resultadoGeografico', 'resultadoFacial', 'usuarioGestor'];
+            
+            const missingFields = requiredFields.filter(field => !data[field] || data[field].trim() === '');
+            
+            if (missingFields.length > 0) {
+                showResult('generateResult', 
+                    `❌ Faltan campos requeridos:\n${missingFields.map(f => `• ${f}`).join('\n')}`, 'error');
+                return;
+            }
+
+            showLoading('generateResult', 'Generando informe de validación...');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/firmar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.status === 'ok' && result.pdfBase64) {
+                        // Convertir Base64 a blob y descargar
+                        const byteCharacters = atob(result.pdfBase64);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'application/pdf' });
+                        
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `informe_validacion_${data.rut.replace(/[^0-9]/g, '')}_${Date.now()}.pdf`;
+                        a.click();
+                        
+                        showResult('generateResult', 
+                            `✅ Informe de validación generado exitosamente\n` +
+                            `👤 Paciente: ${data.nombre}\n` +
+                            `🆔 RUT: ${data.rut}\n` +
+                            `📋 Licencia: ${data.numeroLicencia}\n` +
+                            `📍 Resultado Geográfico: ${data.resultadoGeografico}\n` +
+                            `👁️ Resultado Facial: ${data.resultadoFacial}\n` +
+                            `👨‍💼 Gestor: ${data.usuarioGestor}\n` +
+                            `📄 Tamaño: ${(blob.size / 1024).toFixed(1)} KB\n` +
+                            `⏰ Generado: ${new Date().toLocaleString()}\n` +
+                            `💾 Descargado automáticamente`, 'success');
+                    } else {
+                        showResult('generateResult', `❌ Error en la respuesta: ${JSON.stringify(result)}`, 'error');
+                    }
+                } else {
+                    const error = await response.text();
+                    showResult('generateResult', `❌ Error del servidor: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('generateResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-cargar datos de ejemplo al cargar la página
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                loadDefaultData();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

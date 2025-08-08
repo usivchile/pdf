@@ -29,7 +29,7 @@ Esta guía te llevará paso a paso desde el commit local hasta tener la aplicaci
 ├── logs/              # Logs de la aplicación
 └── backups/           # Backups de WAR anteriores
 
-/opt/tomcat/webapps/   # Directorio de despliegue de Tomcat
+/var/lib/tomcat/webapps/   # Directorio de despliegue de Tomcat
 ```
 
 ## 🚀 Proceso de Despliegue Completo
@@ -95,25 +95,25 @@ sudo mkdir -p /opt/usiv/{storage/{pdfs,temp},certs,logs,backups}
 sudo chown -R tomcat:tomcat /opt/usiv
 
 # Crear backup del WAR actual (si existe)
-if [ -f /opt/tomcat/webapps/pdf-signer.war ]; then
-    sudo cp /opt/tomcat/webapps/pdf-signer.war /opt/usiv/backups/pdf-signer-$(date +%Y%m%d_%H%M%S).war
+if [ -f /var/lib/tomcat/webapps/pdf-signer.war ]; then
+sudo cp /var/lib/tomcat/webapps/pdf-signer.war /opt/usiv/backups/pdf-signer-$(date +%Y%m%d_%H%M%S).war
 fi
 
 # Detener Tomcat
 sudo systemctl stop tomcat
 
 # Limpiar despliegue anterior
-sudo rm -rf /opt/tomcat/webapps/pdf-signer /opt/tomcat/webapps/pdf-signer.war
+sudo rm -rf /var/lib/tomcat/webapps/pdf-signer /var/lib/tomcat/webapps/pdf-signer.war
 ```
 
 #### 2.3 Desplegar el WAR
 
 ```bash
 # Desde tu máquina local, copiar el WAR al VPS
-scp target/pdf-signer-war-1.0.war root@validador.usiv.cl:/opt/tomcat/webapps/pdf-signer.war
+scp target/pdf-signer-war-1.0.war root@validador.usiv.cl:/var/lib/tomcat/webapps/pdf-signer.war
 
 # En el VPS, establecer permisos
-sudo chown tomcat:tomcat /opt/tomcat/webapps/pdf-signer.war
+sudo chown tomcat:tomcat /var/lib/tomcat/webapps/pdf-signer.war
 
 # Iniciar Tomcat
 sudo systemctl start tomcat
@@ -128,7 +128,7 @@ sudo systemctl status tomcat
 
 ```bash
 # En el VPS, monitorear logs de Tomcat
-sudo tail -f /opt/tomcat/logs/catalina.out
+sudo tail -f /var/lib/tomcat/logs/catalina.out
 
 # Verificar logs de la aplicación
 sudo tail -f /opt/usiv/logs/usiv-pdf-service.log
@@ -158,7 +158,7 @@ curl -I https://validador.usiv.cl/pdf-signer/
 Puedes configurar variables de entorno en el VPS para personalizar la configuración:
 
 ```bash
-# En /opt/tomcat/bin/setenv.sh
+# En /var/lib/tomcat/bin/setenv.sh
 export API_ADMIN_USERNAME="admin"
 export API_ADMIN_PASSWORD="TuPasswordSeguro123!"
 export JWT_SECRET="tu-clave-jwt-muy-segura-para-produccion"
@@ -184,7 +184,7 @@ echo $JAVA_HOME
 
 ```bash
 # Verificar que el WAR se desplegó
-ls -la /opt/tomcat/webapps/
+ls -la /var/lib/tomcat/webapps/
 
 # Verificar logs de la aplicación
 sudo tail -100 /opt/usiv/logs/usiv-pdf-service.log
@@ -197,7 +197,7 @@ sudo netstat -tlnp | grep :8080
 
 ```bash
 # Corregir permisos
-sudo chown -R tomcat:tomcat /opt/usiv /opt/tomcat/webapps/pdf-signer.war
+sudo chown -R tomcat:tomcat /opt/usiv /var/lib/tomcat/webapps/pdf-signer.war
 sudo chmod -R 755 /opt/usiv
 ```
 
@@ -208,10 +208,10 @@ sudo chmod -R 755 /opt/usiv
 sudo systemctl stop tomcat
 
 # Restaurar backup anterior
-sudo cp /opt/usiv/backups/pdf-signer-YYYYMMDD_HHMMSS.war /opt/tomcat/webapps/pdf-signer.war
+sudo cp /opt/usiv/backups/pdf-signer-YYYYMMDD_HHMMSS.war /var/lib/tomcat/webapps/pdf-signer.war
 
 # Establecer permisos
-sudo chown tomcat:tomcat /opt/tomcat/webapps/pdf-signer.war
+sudo chown tomcat:tomcat /var/lib/tomcat/webapps/pdf-signer.war
 
 # Iniciar Tomcat
 sudo systemctl start tomcat
