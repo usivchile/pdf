@@ -597,6 +597,15 @@ sudo ./update-local.sh
 
 Si encuentras errores durante la compilación o despliegue:
 
+### Problema de Permisos de Ejecución
+**Síntoma**: `sudo: ./script.sh: command not found` o `Permission denied`
+**Solución**: Hacer ejecutables todos los scripts
+```bash
+# En el VPS, ejecutar una sola vez:
+chmod +x make-executable.sh
+./make-executable.sh
+```
+
 ### Diagnóstico Automático
 
 ```bash
@@ -687,6 +696,7 @@ Se incluyen varios scripts automatizados para facilitar el despliegue:
   - Monitoreo automático
   - Detección y resolución de conflictos de puertos
 - `security-hardening.sh`: Endurecimiento de seguridad del sistema y aplicación
+- `make-executable.sh`: Configurar permisos de ejecución para todos los scripts
 - `troubleshoot.sh`: Diagnóstico y solución de problemas de Maven/Java
 - `help.sh`: Ayuda interactiva con todas las opciones disponibles
 - `manage-tomcat.sh`: Gestión de instancias de Tomcat (detener duplicados, verificar estado)
