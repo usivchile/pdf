@@ -156,9 +156,16 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
-                <configuration>
-                    <packaging>war</packaging>
-                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>boot</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
 		      <groupId>org.apache.maven.plugins</groupId>

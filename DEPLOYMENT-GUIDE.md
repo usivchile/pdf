@@ -1,265 +1,241 @@
-# Guía Rápida de Despliegue - PDF Validator API
+# 🚀 Guía de Despliegue a Producción - USIV PDF Service
 
-## Resumen
-Esta guía te permitirá desplegar la API PDF Validator en tu VPS Hostinger (CentOS 9) de forma rápida y segura.
+## 📋 Resumen
 
-## Requisitos Previos
+Esta guía te llevará paso a paso desde el commit local hasta tener la aplicación funcionando en tu VPS de producción.
 
-### En tu VPS Hostinger:
-- CentOS 9 instalado
-- Acceso root via SSH
-- Mínimo 2GB RAM, 10GB espacio libre
-- Dominio `validador.usiv.cl` apuntando a la IP del VPS
+## 🔧 Prerrequisitos
 
-### Archivos necesarios:
-- `pdf-signer-war-1.0.war` (aplicación compilada)
-- `deploy-complete.sh` (script principal)
-- `install-vps.sh` (instalación base)
-- `configure-nginx.sh` (configuración web)
-- `security-hardening.sh` (seguridad)
-- `test-client.html` (cliente de pruebas)
+### En tu máquina local:
+- Git configurado
+- Maven 3.6+
+- Java 11+
+- Acceso SSH al VPS
 
-## 🚀 Despliegue Automático desde Git
+### En el VPS:
+- Tomcat 9+ instalado y configurado
+- Java 11+ instalado
+- Usuario con permisos sudo
+- Directorios base creados
 
-### Paso 1: Conectar al VPS
-```bash
-ssh root@tu-ip-del-vps
+## 📁 Estructura de Directorios en el VPS
+
+```
+/opt/usiv/
+├── storage/
+│   ├── pdfs/          # PDFs generados
+│   └── temp/          # Archivos temporales
+├── certs/             # Certificados de firma
+├── logs/              # Logs de la aplicación
+└── backups/           # Backups de WAR anteriores
+
+/opt/tomcat/webapps/   # Directorio de despliegue de Tomcat
 ```
 
-### Paso 2: Ejecutar Script de Despliegue desde Git
+## 🚀 Proceso de Despliegue Completo
+
+### Paso 1: Preparar el Código Local
+
 ```bash
-# Descargar script de despliegue desde Git
-wget https://raw.githubusercontent.com/tu-usuario/pdf-validator-api/main/deploy-from-git.sh
+# 1. Asegúrate de estar en la rama correcta
+git status
+git branch
 
-# Dar permisos de ejecución
-chmod +x deploy-from-git.sh
+# 2. Agregar todos los cambios
+git add .
 
-# Ejecutar despliegue automático desde Git
-sudo ./deploy-from-git.sh
+# 3. Hacer commit con mensaje descriptivo
+git commit -m "feat: configuración de producción y limpieza de archivos"
+
+# 4. Subir cambios al repositorio
+git push origin main
 ```
 
-**⏱️ Tiempo estimado:** 15-20 minutos
+### Paso 2: Opción A - Despliegue Automático (Recomendado)
 
-### Despliegue Alternativo (con archivos precompilados)
 ```bash
-# Si prefieres usar archivos ya compilados
-wget https://raw.githubusercontent.com/tu-usuario/pdf-validator-api/main/deploy-complete.sh
-chmod +x deploy-complete.sh
-sudo ./deploy-complete.sh
+# Hacer el script ejecutable
+chmod +x deploy-to-production.sh
+
+# Ejecutar despliegue completo
+./deploy-to-production.sh
+
+# O ejecutar solo construcción
+./deploy-to-production.sh --build-only
+
+# O ejecutar solo despliegue (si ya tienes el WAR)
+./deploy-to-production.sh --deploy-only
 ```
 
-### Método Manual: Copiar archivos al servidor
-```bash
-# Desde tu máquina local, copiar todos los archivos
-scp *.sh pdf-signer-war-1.0.war test-client.html root@TU_IP_VPS:/opt/pdf-validator-deploy/
+### Paso 2: Opción B - Despliegue Manual
 
+#### 2.1 Construir el WAR localmente
+
+```bash
+# Limpiar proyecto anterior
+mvn clean
+
+# Construir WAR para producción
+mvn package -Pprod -DskipTests
+
+# Verificar que se generó el WAR
+ls -la target/pdf-signer-war-1.0.war
+```
+
+#### 2.2 Preparar el VPS
+
+```bash
 # Conectar al VPS
-ssh root@TU_IP_VPS
+ssh root@validador.usiv.cl
 
-# Ir al directorio de despliegue
-cd /opt/pdf-validator-deploy
+# Crear directorios necesarios
+sudo mkdir -p /opt/usiv/{storage/{pdfs,temp},certs,logs,backups}
 
-# Ejecutar script principal
-chmod +x deploy-complete.sh
-./deploy-complete.sh
+# Establecer permisos
+sudo chown -R tomcat:tomcat /opt/usiv
+
+# Crear backup del WAR actual (si existe)
+if [ -f /opt/tomcat/webapps/pdf-signer.war ]; then
+    sudo cp /opt/tomcat/webapps/pdf-signer.war /opt/usiv/backups/pdf-signer-$(date +%Y%m%d_%H%M%S).war
+fi
+
+# Detener Tomcat
+sudo systemctl stop tomcat
+
+# Limpiar despliegue anterior
+sudo rm -rf /opt/tomcat/webapps/pdf-signer /opt/tomcat/webapps/pdf-signer.war
 ```
 
-### Paso 3: Seguir las instrucciones en pantalla
-El script te guiará a través de:
-- ✅ Verificación de requisitos
-- ✅ Instalación de Java 17 y Tomcat 10
-- ✅ Configuración de Nginx con SSL
-- ✅ Aplicación de medidas de seguridad
-- ✅ Despliegue de la aplicación
-- ✅ Configuración de monitoreo automático
+#### 2.3 Desplegar el WAR
 
-## Verificación del Despliegue
-
-### URLs de Acceso:
-- **Aplicación Principal:** https://validador.usiv.cl
-- **Cliente de Pruebas:** https://validador.usiv.cl/test-client.html
-- **API Base:** https://validador.usiv.cl/api
-
-### Credenciales por Defecto:
-```
-Admin: admin / [generada automáticamente]
-User: user / [generada automáticamente]
-```
-*Las credenciales exactas se guardan en: `/opt/pdf-validator-credentials.txt`*
-
-### Verificar Servicios:
 ```bash
-# Verificar que todos los servicios estén funcionando
-sudo systemctl status tomcat nginx fail2ban
+# Desde tu máquina local, copiar el WAR al VPS
+scp target/pdf-signer-war-1.0.war root@validador.usiv.cl:/opt/tomcat/webapps/pdf-signer.war
 
-# Probar la API
-curl -k https://validador.usiv.cl/api/auth/validate
+# En el VPS, establecer permisos
+sudo chown tomcat:tomcat /opt/tomcat/webapps/pdf-signer.war
+
+# Iniciar Tomcat
+sudo systemctl start tomcat
+
+# Verificar estado
+sudo systemctl status tomcat
 ```
 
-## Pruebas Básicas
+### Paso 3: Verificación del Despliegue
 
-### 1. Probar Subida de PDF (Público - Sin JWT)
+#### 3.1 Verificar logs
+
 ```bash
-curl -X POST -F "file=@documento.pdf" https://validador.usiv.cl/api/pdf/upload
-```
-
-### 2. Obtener Token JWT
-```bash
-curl -X POST https://validador.usiv.cl/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"TU_PASSWORD"}'
-```
-
-### 3. Listar Archivos (Requiere JWT)
-```bash
-curl -X GET https://validador.usiv.cl/api/files \
-  -H "Authorization: Bearer TU_TOKEN_JWT"
-```
-
-## Cambiar Credenciales
-
-### Método 1: Editar archivo de propiedades
-```bash
-# Editar configuración
-sudo nano /opt/tomcat/webapps/ROOT/WEB-INF/classes/application.properties
-
-# Cambiar estas líneas:
-api.admin.password=nueva_password_admin
-api.user.password=nueva_password_user
-
-# Reiniciar Tomcat
-sudo systemctl restart tomcat
-```
-
-### Método 2: Variables de entorno
-```bash
-# Editar archivo de servicio
-sudo nano /etc/systemd/system/tomcat.service
-
-# Agregar en la sección [Service]:
-Environment="API_ADMIN_PASSWORD=nueva_password_admin"
-Environment="API_USER_PASSWORD=nueva_password_user"
-
-# Recargar y reiniciar
-sudo systemctl daemon-reload
-sudo systemctl restart tomcat
-```
-
-## Monitoreo y Mantenimiento
-
-### Scripts de Monitoreo Automático:
-- **Verificación de seguridad:** `/opt/security-check.sh` (diario a las 6:00 AM)
-- **Monitoreo de servicios:** `/opt/monitor-pdf-validator.sh` (cada 5 minutos)
-- **Backup de configuraciones:** `/opt/backup-configs.sh` (diario a las 2:00 AM)
-
-### Comandos Útiles:
-```bash
-# Ver logs de aplicación
+# En el VPS, monitorear logs de Tomcat
 sudo tail -f /opt/tomcat/logs/catalina.out
 
-# Ver logs de Nginx
-sudo tail -f /var/log/nginx/validador.usiv.cl.access.log
-
-# Verificar seguridad manualmente
-sudo /opt/security-check.sh
-
-# Ver estado de fail2ban
-sudo fail2ban-client status
-
-# Reiniciar servicios
-sudo systemctl restart tomcat nginx
+# Verificar logs de la aplicación
+sudo tail -f /opt/usiv/logs/usiv-pdf-service.log
 ```
 
-### Ubicaciones Importantes:
-- **Aplicación:** `/opt/tomcat/webapps/ROOT/`
-- **Almacenamiento PDFs:** `/opt/tomcat/webapps/storage/pdfs/`
-- **Logs aplicación:** `/opt/tomcat/logs/`
-- **Logs Nginx:** `/var/log/nginx/`
-- **Configuraciones:** `/opt/tomcat/conf/`
-- **Credenciales:** `/opt/pdf-validator-credentials.txt`
+#### 3.2 Verificar endpoints
 
-## Solución de Problemas Comunes
-
-### Problema: La aplicación no responde
 ```bash
-# Verificar servicios
-sudo systemctl status tomcat nginx
+# Health check
+curl https://validador.usiv.cl/pdf-signer/actuator/health
 
-# Reiniciar servicios
-sudo systemctl restart tomcat
-sudo systemctl restart nginx
+# Info endpoint
+curl https://validador.usiv.cl/pdf-signer/actuator/info
 
-# Verificar logs
-sudo tail -f /opt/tomcat/logs/catalina.out
+# Página principal (debería devolver HTML)
+curl -I https://validador.usiv.cl/pdf-signer/
 ```
 
-### Problema: Error de SSL/Certificado
+#### 3.3 Verificar en el navegador
+
+- **URL Principal**: https://validador.usiv.cl/pdf-signer/
+- **Health Check**: https://validador.usiv.cl/pdf-signer/actuator/health
+- **API Info**: https://validador.usiv.cl/pdf-signer/actuator/info
+
+## 🔧 Variables de Entorno (Opcional)
+
+Puedes configurar variables de entorno en el VPS para personalizar la configuración:
+
 ```bash
-# Renovar certificado manualmente
-sudo certbot renew
-
-# Verificar configuración de Nginx
-sudo nginx -t
-
-# Recargar Nginx
-sudo systemctl reload nginx
+# En /opt/tomcat/bin/setenv.sh
+export API_ADMIN_USERNAME="admin"
+export API_ADMIN_PASSWORD="TuPasswordSeguro123!"
+export JWT_SECRET="tu-clave-jwt-muy-segura-para-produccion"
+export PDF_STORAGE_PATH="/opt/usiv/storage/pdfs"
+export CERT_PATH="/opt/usiv/certs"
+export LOG_PATH="/opt/usiv/logs"
 ```
 
-### Problema: Espacio en disco lleno
+## 🐛 Solución de Problemas
+
+### Problema: Tomcat no inicia
+
 ```bash
-# Limpiar logs antiguos
-sudo find /opt/tomcat/logs -name "*.log" -mtime +30 -delete
-sudo find /var/log/nginx -name "*.log" -mtime +30 -delete
+# Verificar logs de Tomcat
+sudo journalctl -u tomcat -f
 
-# Limpiar PDFs antiguos (opcional)
-sudo find /opt/tomcat/webapps/storage/pdfs -name "*.pdf" -mtime +90 -delete
+# Verificar configuración de Java
+java -version
+echo $JAVA_HOME
 ```
 
-### Problema: Acceso denegado a archivos
+### Problema: Aplicación no responde
+
+```bash
+# Verificar que el WAR se desplegó
+ls -la /opt/tomcat/webapps/
+
+# Verificar logs de la aplicación
+sudo tail -100 /opt/usiv/logs/usiv-pdf-service.log
+
+# Verificar puertos
+sudo netstat -tlnp | grep :8080
+```
+
+### Problema: Errores de permisos
+
 ```bash
 # Corregir permisos
-sudo chown -R tomcat:tomcat /opt/tomcat/webapps/
-sudo chmod -R 755 /opt/tomcat/webapps/storage/
+sudo chown -R tomcat:tomcat /opt/usiv /opt/tomcat/webapps/pdf-signer.war
+sudo chmod -R 755 /opt/usiv
 ```
 
-## Seguridad
+## 🔄 Rollback (Volver a Versión Anterior)
 
-### Configuraciones Aplicadas Automáticamente:
-- ✅ SSH endurecido (sin root, sin passwords)
-- ✅ fail2ban con reglas personalizadas
-- ✅ Firewall configurado (solo HTTP/HTTPS)
-- ✅ Tomcat asegurado (manager deshabilitado)
-- ✅ Nginx con headers de seguridad
-- ✅ SSL/TLS con Let's Encrypt
-- ✅ Rate limiting para API
-- ✅ Auditoría del sistema
-- ✅ Actualizaciones automáticas de seguridad
-
-### Verificar Seguridad:
 ```bash
-# Ejecutar verificación completa
-sudo /opt/security-check.sh
+# En el VPS
+sudo systemctl stop tomcat
 
-# Ver intentos de acceso bloqueados
-sudo fail2ban-client status nginx-limit-req
+# Restaurar backup anterior
+sudo cp /opt/usiv/backups/pdf-signer-YYYYMMDD_HHMMSS.war /opt/tomcat/webapps/pdf-signer.war
 
-# Verificar logs de auditoría
-sudo ausearch -k tomcat-config
+# Establecer permisos
+sudo chown tomcat:tomcat /opt/tomcat/webapps/pdf-signer.war
+
+# Iniciar Tomcat
+sudo systemctl start tomcat
 ```
 
-## Contacto y Soporte
+## 📝 Checklist de Despliegue
 
-- **Documentación completa:** `README.md`
-- **Logs de despliegue:** `/var/log/pdf-validator-deploy.log`
-- **Logs de seguridad:** `/var/log/security-check.log`
-- **Cliente de pruebas:** https://validador.usiv.cl/test-client.html
+- [ ] Código commiteado y pusheado
+- [ ] WAR construido exitosamente
+- [ ] Backup del WAR anterior creado
+- [ ] Tomcat detenido
+- [ ] WAR anterior eliminado
+- [ ] Nuevo WAR copiado
+- [ ] Permisos establecidos
+- [ ] Tomcat iniciado
+- [ ] Health check exitoso
+- [ ] Funcionalidad verificada
+
+## 🎯 URLs Importantes
+
+- **Aplicación**: https://validador.usiv.cl/pdf-signer/
+- **Health**: https://validador.usiv.cl/pdf-signer/actuator/health
+- **Info**: https://validador.usiv.cl/pdf-signer/actuator/info
 
 ---
 
-**¡Importante!** Después del despliegue:
-1. Cambia las credenciales por defecto
-2. Configura backups externos si es necesario
-3. Revisa los logs regularmente
-4. Mantén el sistema actualizado
-
-**URL Final:** https://validador.usiv.cl
+**¡Listo!** Tu aplicación USIV PDF Service está ahora desplegada en producción. 🎉

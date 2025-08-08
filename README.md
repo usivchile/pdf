@@ -227,7 +227,7 @@ server {
 # Login
 curl -X POST https://validador.usiv.cl/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"UsivAdmin2025!"}' \
 
 # Validar token
 curl -X GET https://validador.usiv.cl/api/auth/validate \

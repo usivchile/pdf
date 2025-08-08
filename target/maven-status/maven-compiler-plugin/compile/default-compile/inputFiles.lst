@@ -1,9 +1,11 @@
+C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\config\AuthProperties.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\controller\PdfController.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\service\FileManagementService.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\config\SecurityConfig.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\MainApp.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\controller\AuthController.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\dto\PdfGenerationResponse.java
+C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\controller\HealthController.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\security\JwtAuthenticationEntryPoint.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\security\JwtTokenProvider.java
 C:\Users\cflores\Desktop\usiv\pdf\src\main\java\com\usiv\config\SwaggerConfig.java

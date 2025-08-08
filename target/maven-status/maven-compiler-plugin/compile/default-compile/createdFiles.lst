@@ -1,8 +1,11 @@
 com\usiv\config\SwaggerConfig.class
+com\usiv\config\AuthProperties$Admin.class
 com\usiv\security\JwtAuthenticationFilter.class
 com\usiv\controller\PdfController.class
 com\usiv\dto\PdfGenerationResponse.class
 com\usiv\PdfSignerApplication.class
+META-INF\spring-configuration-metadata.json
+com\usiv\config\AuthProperties.class
 com\usiv\dto\LoginResponse.class
 com\usiv\security\JwtTokenProvider.class
 com\usiv\MainApp.class
@@ -10,8 +13,10 @@ com\usiv\controller\AuthController.class
 com\usiv\service\PdfService.class
 com\usiv\service\FileManagementService$CleanupStats.class
 com\usiv\security\JwtAuthenticationEntryPoint.class
+com\usiv\config\AuthProperties$User.class
 com\usiv\dto\LoginRequest.class
 com\usiv\service\QrCodeService.class
+com\usiv\controller\HealthController.class
 com\usiv\dto\PdfGenerationRequest.class
 com\usiv\controller\DownloadController.class
 com\usiv\service\FileManagementService.class
