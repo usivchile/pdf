@@ -383,46 +383,160 @@ EOF
     log "✓ Tomcat instalado correctamente"
 }
 
-# Función para desplegar la aplicación
-deploy_application() {
-    log "Desplegando aplicación PDF Signer..."
+# Función para compilar la aplicación
+compile_application() {
+    log "Compilando aplicación PDF Signer..."
     
-    # Verificar que existe el WAR
-    WAR_FILE="/home/ubuntu/pdf-signer/target/pdf-signer-war-1.0.war"
-    if [[ ! -f "$WAR_FILE" ]]; then
-        log "ERROR: No se encuentra el archivo WAR en $WAR_FILE"
-        log "Intentando buscar en ubicaciones alternativas..."
-        
-        # Buscar el WAR en ubicaciones comunes
-        POSSIBLE_WARS=(
-            "/opt/pdf-signer/target/pdf-signer-war-1.0.war"
-            "/var/www/pdf-signer/target/pdf-signer-war-1.0.war"
-            "/root/pdf-signer/target/pdf-signer-war-1.0.war"
-        )
-        
-        for war in "${POSSIBLE_WARS[@]}"; do
-            if [[ -f "$war" ]]; then
-                WAR_FILE="$war"
-                log "WAR encontrado en: $WAR_FILE"
-                break
-            fi
-        done
-        
-        if [[ ! -f "$WAR_FILE" ]]; then
-            log "ERROR: No se pudo encontrar el archivo WAR"
-            log "Por favor, compila la aplicación primero con: mvn clean package"
+    # Detectar directorio del proyecto
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    
+    # Verificar que existe pom.xml
+    if [[ ! -f "$SCRIPT_DIR/pom.xml" ]]; then
+        log "ERROR: No se encontró pom.xml en $SCRIPT_DIR"
+        log "Este script debe ejecutarse desde el directorio del proyecto"
+        return 1
+    fi
+    
+    # Verificar que Maven está instalado
+    if ! command -v mvn >/dev/null 2>&1; then
+        log "ERROR: Maven no está instalado"
+        log "Instalando Maven..."
+        if command -v dnf >/dev/null 2>&1; then
+            dnf install maven -y
+        elif command -v yum >/dev/null 2>&1; then
+            yum install maven -y
+        elif command -v apt-get >/dev/null 2>&1; then
+            apt-get update && apt-get install maven -y
+        else
+            log "ERROR: No se pudo instalar Maven automáticamente"
             return 1
         fi
     fi
     
+    # Cambiar al directorio del proyecto
+    cd "$SCRIPT_DIR" || {
+        log "ERROR: No se pudo acceder al directorio del proyecto"
+        return 1
+    }
+    
+    # Compilar con Maven
+    log "Ejecutando: mvn clean package -DskipTests"
+    if mvn clean package -DskipTests; then
+        log "✓ Compilación exitosa"
+        
+        # Verificar que se generó el WAR
+        if [[ -f "target/pdf-signer-war-1.0.war" ]]; then
+            WAR_SIZE=$(du -h "target/pdf-signer-war-1.0.war" | cut -f1)
+            log "✓ WAR generado exitosamente (tamaño: $WAR_SIZE)"
+            return 0
+        else
+            log "ERROR: El archivo WAR no se generó después de la compilación"
+            return 1
+        fi
+    else
+        log "ERROR: Error durante la compilación"
+        log "Verificar logs de Maven para más detalles"
+        return 1
+    fi
+}
+
+# Función para desplegar la aplicación
+deploy_application() {
+    log "Desplegando aplicación PDF Signer..."
+    
+    # Detectar directorio actual del script
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    log "Directorio del script: $SCRIPT_DIR"
+    
+    # Buscar el WAR en ubicaciones probables
+    POSSIBLE_WARS=(
+        "$SCRIPT_DIR/target/pdf-signer-war-1.0.war"                    # Directorio actual del proyecto
+        "$SCRIPT_DIR/../target/pdf-signer-war-1.0.war"                 # Un nivel arriba
+        "/opt/pdf-signer/pdf/target/pdf-signer-war-1.0.war"            # Ubicación en VPS
+        "/opt/pdf-signer/target/pdf-signer-war-1.0.war"                # Ubicación alternativa
+        "/home/ubuntu/pdf-signer/target/pdf-signer-war-1.0.war"        # Ubicación Ubuntu
+        "/var/www/pdf-signer/target/pdf-signer-war-1.0.war"            # Ubicación web
+        "/root/pdf-signer/target/pdf-signer-war-1.0.war"               # Ubicación root
+        "$(pwd)/target/pdf-signer-war-1.0.war"                         # Directorio de trabajo actual
+    )
+    
+    WAR_FILE=""
+    log "Buscando archivo WAR en ubicaciones posibles..."
+    
+    for war in "${POSSIBLE_WARS[@]}"; do
+        log "Verificando: $war"
+        if [[ -f "$war" ]]; then
+            WAR_FILE="$war"
+            log "✓ WAR encontrado en: $WAR_FILE"
+            break
+        fi
+    done
+    
+    if [[ -z "$WAR_FILE" ]]; then
+        log "ADVERTENCIA: No se encontró el archivo WAR en ninguna ubicación"
+        log "Ubicaciones verificadas:"
+        for war in "${POSSIBLE_WARS[@]}"; do
+            log "  - $war"
+        done
+        log ""
+        log "Intentando compilar la aplicación automáticamente..."
+        
+        # Intentar compilar la aplicación
+        if compile_application; then
+            log "✓ Compilación exitosa, reintentando búsqueda del WAR..."
+            
+            # Buscar nuevamente el WAR después de la compilación
+            for war in "${POSSIBLE_WARS[@]}"; do
+                if [[ -f "$war" ]]; then
+                    WAR_FILE="$war"
+                    log "✓ WAR encontrado después de la compilación: $WAR_FILE"
+                    break
+                fi
+            done
+            
+            if [[ -z "$WAR_FILE" ]]; then
+                log "ERROR: Aún no se puede encontrar el WAR después de la compilación"
+                return 1
+            fi
+        else
+            log "ERROR: No se pudo compilar la aplicación"
+            log "SOLUCIONES MANUALES:"
+            log "1. Compilar manualmente: cd $SCRIPT_DIR && mvn clean package"
+            log "2. Verificar que el archivo WAR existe: ls -la $SCRIPT_DIR/target/"
+            log "3. Si el WAR está en otra ubicación, copiarlo a: $SCRIPT_DIR/target/pdf-signer-war-1.0.war"
+            return 1
+        fi
+    fi
+    
+    # Verificar tamaño del WAR
+    WAR_SIZE=$(du -h "$WAR_FILE" | cut -f1)
+    log "Tamaño del archivo WAR: $WAR_SIZE"
+    
     # Limpiar webapps
+    log "Limpiando directorio webapps..."
     rm -rf /opt/tomcat/webapps/*
     
     # Copiar WAR
-    cp "$WAR_FILE" /opt/tomcat/webapps/ROOT.war
-    chown tomcat:tomcat /opt/tomcat/webapps/ROOT.war
+    log "Copiando WAR a Tomcat..."
+    if cp "$WAR_FILE" /opt/tomcat/webapps/ROOT.war; then
+        log "✓ WAR copiado exitosamente"
+    else
+        log "ERROR: Error copiando el archivo WAR"
+        return 1
+    fi
     
-    log "Aplicación desplegada como ROOT.war"
+    # Configurar permisos
+    chown tomcat:tomcat /opt/tomcat/webapps/ROOT.war
+    chmod 644 /opt/tomcat/webapps/ROOT.war
+    
+    # Verificar que el archivo fue copiado correctamente
+    if [[ -f "/opt/tomcat/webapps/ROOT.war" ]]; then
+        DEPLOYED_SIZE=$(du -h "/opt/tomcat/webapps/ROOT.war" | cut -f1)
+        log "✓ Aplicación desplegada como ROOT.war (tamaño: $DEPLOYED_SIZE)"
+    else
+        log "ERROR: El archivo WAR no se copió correctamente"
+        return 1
+    fi
 }
 
 # Función para iniciar y verificar Tomcat
@@ -506,49 +620,95 @@ main() {
         cp -r /opt/tomcat/logs /tmp/tomcat-backup-$(date +%Y%m%d-%H%M%S)/ 2>/dev/null || true
     fi
     
+    # Paso 1: Detener procesos de Tomcat
+    log "Paso 1: Deteniendo procesos de Tomcat..."
     stop_all_tomcat
+    
+    # Paso 2: Eliminar instalaciones previas
+    log "Paso 2: Eliminando instalaciones previas..."
     remove_tomcat_installations
-    install_clean_tomcat
-    deploy_application
-    start_and_verify_tomcat
+    
+    # Paso 3: Verificar/Compilar aplicación
+    log "Paso 3: Verificando aplicación..."
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ ! -f "$SCRIPT_DIR/target/pdf-signer-war-1.0.war" ]]; then
+        log "WAR no encontrado, compilando aplicación..."
+        if ! compile_application; then
+            log "ADVERTENCIA: Error compilando aplicación, continuando con instalación de Tomcat"
+        fi
+    else
+        WAR_SIZE=$(du -h "$SCRIPT_DIR/target/pdf-signer-war-1.0.war" | cut -f1)
+        log "✓ WAR encontrado (tamaño: $WAR_SIZE)"
+    fi
+    
+    # Paso 4: Instalar Tomcat
+    log "Paso 4: Instalando Tomcat..."
+    if ! install_clean_tomcat; then
+        log "ERROR: Error instalando Tomcat"
+        exit 1
+    fi
+    
+    # Paso 5: Desplegar aplicación
+    log "Paso 5: Desplegando aplicación..."
+    if ! deploy_application; then
+        log "ERROR: Error desplegando aplicación"
+        exit 1
+    fi
+    
+    # Paso 6: Iniciar y verificar Tomcat
+    log "Paso 6: Iniciando y verificando Tomcat..."
+    if ! start_and_verify_tomcat; then
+        log "ERROR: Error iniciando o verificando Tomcat"
+        exit 1
+    fi
     
     log "=== INSTALACIÓN COMPLETADA ==="
-    echo
-    echo "RESUMEN:"
-    echo "- Tomcat 9 instalado en /opt/tomcat"
-    echo "- Servicio systemd: tomcat.service"
-    echo "- Comandos: systemctl {start|stop|restart|status} tomcat"
-    echo "- Puerto: 8080"
-    echo "- Usuario: tomcat"
-    echo "- Logs: /opt/tomcat/logs/"
-    echo "- Aplicación desplegada como ROOT"
-    echo
-    echo "VERIFICACIONES INMEDIATAS:"
-    echo "- Estado del servicio: systemctl status tomcat"
-    echo "- ¿Servicio habilitado?: systemctl is-enabled tomcat"
-    echo "- ¿Servicio activo?: systemctl is-active tomcat"
-    echo "- Puerto en uso: netstat -tlnp | grep 8080"
-    echo "- Procesos Java: ps aux | grep java"
-    echo
-    echo "LOGS Y DIAGNÓSTICO:"
-    echo "- Logs del servicio: journalctl -u tomcat -f"
-    echo "- Logs de Tomcat: tail -f /opt/tomcat/logs/catalina.out"
-    echo "- Logs de aplicación: tail -f /opt/tomcat/logs/localhost.*.log"
-    echo "- Configuración del servicio: cat /etc/systemd/system/tomcat.service"
-    echo
-    echo "PRUEBAS DE CONECTIVIDAD:"
-    echo "- Local: curl -I http://localhost:8080/"
-    echo "- Aplicación: curl http://localhost:8080/"
-    echo "- Desde exterior: curl -I http://$(hostname -I | awk '{print $1}'):8080/"
-    echo
-    echo "COMANDOS DE SOLUCIÓN DE PROBLEMAS:"
-    echo "- Reiniciar servicio: sudo systemctl restart tomcat"
-    echo "- Ver logs en tiempo real: sudo journalctl -u tomcat -f"
-    echo "- Verificar JAVA_HOME: sudo systemctl show tomcat -p Environment"
-    echo "- Verificar permisos: ls -la /opt/tomcat/bin/startup.sh"
-    echo
-    echo "SIGUIENTE PASO:"
-    echo "Ejecutar: sudo ./check-deployment.sh"
+    log "✓ Aplicación compilada exitosamente"
+    log "✓ Tomcat instalado y configurado como servicio systemd"
+    log "✓ Aplicación PDF Signer desplegada como ROOT.war"
+    log "✓ Servicio iniciado y verificado"
+    log ""
+    log "INFORMACIÓN DEL DESPLIEGUE:"
+    if [[ -f "/opt/tomcat/webapps/ROOT.war" ]]; then
+        DEPLOYED_SIZE=$(du -h "/opt/tomcat/webapps/ROOT.war" | cut -f1)
+        log "• Aplicación desplegada: ROOT.war (tamaño: $DEPLOYED_SIZE)"
+    fi
+    log "• URL de acceso: http://localhost:8080/"
+    log "• Endpoint de salud: http://localhost:8080/api/health"
+    log "• Directorio de logs: /opt/tomcat/logs/"
+    log ""
+    log "VERIFICACIONES INMEDIATAS:"
+    log "• Estado del servicio: systemctl status tomcat"
+    log "• Verificar que el servicio existe: systemctl list-unit-files | grep tomcat"
+    log "• Logs del servicio: journalctl -u tomcat -f"
+    log "• Verificar puerto 8080: netstat -tlnp | grep 8080"
+    log "• Probar conectividad: curl -v http://localhost:8080/"
+    log ""
+    log "LOGS Y DIAGNÓSTICOS:"
+    log "• Logs de Tomcat: tail -f /opt/tomcat/logs/catalina.out"
+    log "• Logs del sistema: journalctl -u tomcat --no-pager"
+    log "• Verificar JAVA_HOME: echo \$JAVA_HOME (debe mostrar la ruta de Java)"
+    log "• Verificar startup.sh: ls -la /opt/tomcat/bin/startup.sh"
+    log "• Verificar permisos: ls -la /opt/tomcat/"
+    log ""
+    log "PRUEBAS DE CONECTIVIDAD:"
+    log "• Conectividad local: curl http://localhost:8080/api/health"
+    log "• Verificar aplicación: curl http://localhost:8080/"
+    log "• Ver aplicaciones desplegadas: ls -la /opt/tomcat/webapps/"
+    log ""
+    log "COMANDOS DE TROUBLESHOOTING:"
+    log "• Reiniciar servicio: systemctl restart tomcat"
+    log "• Ver estado detallado: systemctl status tomcat -l"
+    log "• Verificar configuración: cat /etc/systemd/system/tomcat.service"
+    log "• Verificar procesos Java: ps aux | grep java"
+    log "• Verificar puertos: ss -tlnp | grep 8080"
+    log "• Recompilar aplicación: cd $(dirname "${BASH_SOURCE[0]}") && mvn clean package"
+    log ""
+    log "SCRIPT DE VERIFICACIÓN:"
+    log "• Ejecutar verificación completa: ./check-deployment.sh"
+    log ""
+    log "SIGUIENTE PASO:"
+    log "Ejecutar: ./check-deployment.sh"
 }
 
 # Ejecutar función principal
