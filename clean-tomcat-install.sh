@@ -169,14 +169,68 @@ remove_tomcat_installations() {
 install_clean_tomcat() {
     log "Instalando Tomcat 9 limpio..."
     
-    # Actualizar repositorios
-    log "Actualizando repositorios..."
-    apt update || { log "Error actualizando repositorios, continuando..."; }
+    # Detectar gestor de paquetes y actualizar repositorios
+    log "Detectando gestor de paquetes del sistema..."
+    if command -v dnf >/dev/null 2>&1; then
+        PACKAGE_MANAGER="dnf"
+        JAVA_PACKAGE="java-11-openjdk-devel"
+        log "✓ Usando DNF (Fedora/RHEL 8+/Rocky Linux)"
+    elif command -v yum >/dev/null 2>&1; then
+        PACKAGE_MANAGER="yum"
+        JAVA_PACKAGE="java-11-openjdk-devel"
+        log "✓ Usando YUM (CentOS/RHEL)"
+    elif command -v apt-get >/dev/null 2>&1; then
+        PACKAGE_MANAGER="apt-get"
+        JAVA_PACKAGE="openjdk-11-jdk"
+        log "✓ Usando APT (Ubuntu/Debian)"
+    elif command -v zypper >/dev/null 2>&1; then
+        PACKAGE_MANAGER="zypper"
+        JAVA_PACKAGE="java-11-openjdk-devel"
+        log "✓ Usando Zypper (openSUSE)"
+    elif command -v pacman >/dev/null 2>&1; then
+        PACKAGE_MANAGER="pacman"
+        JAVA_PACKAGE="jdk11-openjdk"
+        log "✓ Usando Pacman (Arch Linux)"
+    else
+        log "ERROR: No se pudo detectar un gestor de paquetes compatible"
+        log "Gestores soportados: dnf, yum, apt-get, zypper, pacman"
+        return 1
+    fi
+    
+    # Actualizar repositorios según el gestor de paquetes
+    log "Actualizando repositorios con $PACKAGE_MANAGER..."
+    case "$PACKAGE_MANAGER" in
+        "apt-get")
+            apt-get update || { log "Error actualizando repositorios, continuando..."; }
+            ;;
+        "dnf"|"yum")
+            $PACKAGE_MANAGER makecache || { log "Error actualizando repositorios, continuando..."; }
+            ;;
+        "zypper")
+            zypper refresh || { log "Error actualizando repositorios, continuando..."; }
+            ;;
+        "pacman")
+            pacman -Sy || { log "Error actualizando repositorios, continuando..."; }
+            ;;
+    esac
     
     # Instalar Java si no está instalado
     if ! command -v java &> /dev/null; then
-        log "Instalando OpenJDK 11..."
-        apt install -y openjdk-11-jdk || { log "Error instalando Java"; return 1; }
+        log "Instalando OpenJDK 11 con $PACKAGE_MANAGER..."
+        case "$PACKAGE_MANAGER" in
+            "apt-get")
+                apt-get install -y $JAVA_PACKAGE || { log "Error instalando Java"; return 1; }
+                ;;
+            "dnf"|"yum")
+                $PACKAGE_MANAGER install -y $JAVA_PACKAGE || { log "Error instalando Java"; return 1; }
+                ;;
+            "zypper")
+                zypper install -y $JAVA_PACKAGE || { log "Error instalando Java"; return 1; }
+                ;;
+            "pacman")
+                pacman -S --noconfirm $JAVA_PACKAGE || { log "Error instalando Java"; return 1; }
+                ;;
+        esac
     else
         log "✓ Java ya está instalado: $(java -version 2>&1 | head -1)"
     fi
@@ -240,25 +294,115 @@ install_clean_tomcat() {
     fi
     
     # Verificar directorio extraído
-    if [[ ! -d "apache-tomcat-${TOMCAT_VERSION}" ]]; then
+    EXTRACTED_DIR="apache-tomcat-${TOMCAT_VERSION}"
+    log "Verificando directorio extraído: $EXTRACTED_DIR"
+    if [[ ! -d "$EXTRACTED_DIR" ]]; then
         log "ERROR: Directorio de Tomcat no encontrado después de extracción"
+        log "Directorios disponibles:"
+        ls -la || true
         return 1
     fi
     
+    # Verificar estructura antes de mover
+    log "Verificando estructura antes de mover..."
+    if [[ ! -d "$EXTRACTED_DIR/bin" ]]; then
+        log "ERROR: Directorio bin no encontrado en $EXTRACTED_DIR"
+        log "Contenido de $EXTRACTED_DIR:"
+        ls -la "$EXTRACTED_DIR/" || true
+        return 1
+    fi
+    
+    # Verificar archivos críticos
+    CRITICAL_FILES=("startup.sh" "shutdown.sh" "catalina.sh")
+    for file in "${CRITICAL_FILES[@]}"; do
+        if [[ ! -f "$EXTRACTED_DIR/bin/$file" ]]; then
+            log "ERROR: Archivo crítico $file no encontrado en $EXTRACTED_DIR/bin/"
+            log "Contenido de $EXTRACTED_DIR/bin/:"
+            ls -la "$EXTRACTED_DIR/bin/" || true
+            return 1
+        fi
+    done
+    log "✓ Todos los archivos críticos encontrados"
+    
     # Mover a directorio final
     log "Instalando en /opt/tomcat..."
-    if mv "apache-tomcat-${TOMCAT_VERSION}" /opt/tomcat; then
+    if mv "$EXTRACTED_DIR" /opt/tomcat; then
         log "✓ Tomcat movido a /opt/tomcat"
     else
         log "ERROR: Error moviendo Tomcat a /opt/tomcat"
         return 1
     fi
     
+    # Verificar estructura final
+    log "Verificando estructura final de Tomcat..."
+    if [[ ! -d "/opt/tomcat/bin" ]]; then
+        log "ERROR: Directorio /opt/tomcat/bin no encontrado después del movimiento"
+        log "Contenido de /opt/tomcat:"
+        ls -la /opt/tomcat/ || true
+        return 1
+    fi
+    
+    # Verificar archivos de script en ubicación final
+    for file in "${CRITICAL_FILES[@]}"; do
+        if [[ ! -f "/opt/tomcat/bin/$file" ]]; then
+            log "ERROR: $file no encontrado en /opt/tomcat/bin/ después del movimiento"
+            log "Contenido de /opt/tomcat/bin:"
+            ls -la /opt/tomcat/bin/ || true
+            return 1
+        fi
+    done
+    log "✓ Estructura de Tomcat verificada correctamente"
+    
     # Configurar permisos
-    log "Configurando permisos..."
-    chown -R tomcat:tomcat /opt/tomcat || { log "Error configurando permisos"; return 1; }
-    chmod +x /opt/tomcat/bin/*.sh || { log "Error configurando permisos de scripts"; return 1; }
-    log "✓ Permisos configurados"
+    log "Configurando permisos de Tomcat..."
+    
+    # Configurar propietario
+    if chown -R tomcat:tomcat /opt/tomcat; then
+        log "✓ Propietario configurado (tomcat:tomcat)"
+    else
+        log "ERROR: Error configurando permisos de propietario"
+        return 1
+    fi
+    
+    # Configurar permisos de directorios
+    chmod 755 /opt/tomcat || { log "ERROR: Error configurando permisos del directorio principal"; return 1; }
+    chmod 755 /opt/tomcat/bin || { log "ERROR: Error configurando permisos del directorio bin"; return 1; }
+    
+    # Configurar permisos de scripts específicamente
+    log "Configurando permisos de scripts ejecutables..."
+    SCRIPT_COUNT=0
+    for script in /opt/tomcat/bin/*.sh; do
+        if [[ -f "$script" ]]; then
+            if chmod +x "$script"; then
+                SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
+                log "✓ Permisos configurados para: $(basename "$script")"
+            else
+                log "ERROR: Error configurando permisos para: $(basename "$script")"
+                return 1
+            fi
+        fi
+    done
+    
+    if [[ $SCRIPT_COUNT -gt 0 ]]; then
+        log "✓ Permisos configurados para $SCRIPT_COUNT scripts"
+    else
+        log "ERROR: No se encontraron archivos .sh en /opt/tomcat/bin/"
+        log "Contenido actual de /opt/tomcat/bin/:"
+        ls -la /opt/tomcat/bin/ || true
+        return 1
+    fi
+    
+    # Verificar permisos finales
+    log "Verificando permisos finales..."
+    if [[ -x "/opt/tomcat/bin/startup.sh" ]] && [[ -x "/opt/tomcat/bin/shutdown.sh" ]]; then
+        log "✓ Scripts principales son ejecutables"
+    else
+        log "ERROR: Scripts principales no son ejecutables"
+        ls -la /opt/tomcat/bin/startup.sh /opt/tomcat/bin/shutdown.sh || true
+        return 1
+    fi
+    
+    log "✓ Todos los permisos configurados correctamente"
     
     # Configurar Tomcat para usar puerto 8080
     log "Configurando puerto 8080..."
@@ -400,16 +544,46 @@ compile_application() {
     # Verificar que Maven está instalado
     if ! command -v mvn >/dev/null 2>&1; then
         log "ERROR: Maven no está instalado"
-        log "Instalando Maven..."
+        log "Instalando Maven automáticamente..."
+        
+        # Detectar gestor de paquetes
         if command -v dnf >/dev/null 2>&1; then
-            dnf install maven -y
+            MAVEN_PACKAGE_MANAGER="dnf"
         elif command -v yum >/dev/null 2>&1; then
-            yum install maven -y
+            MAVEN_PACKAGE_MANAGER="yum"
         elif command -v apt-get >/dev/null 2>&1; then
-            apt-get update && apt-get install maven -y
+            MAVEN_PACKAGE_MANAGER="apt-get"
+        elif command -v zypper >/dev/null 2>&1; then
+            MAVEN_PACKAGE_MANAGER="zypper"
+        elif command -v pacman >/dev/null 2>&1; then
+            MAVEN_PACKAGE_MANAGER="pacman"
         else
-            log "ERROR: No se pudo instalar Maven automáticamente"
+            log "ERROR: No se pudo detectar un gestor de paquetes para instalar Maven"
             return 1
+        fi
+        
+        # Instalar Maven según el gestor de paquetes
+        case "$MAVEN_PACKAGE_MANAGER" in
+            "apt-get")
+                apt-get update && apt-get install -y maven || { log "Error instalando Maven"; return 1; }
+                ;;
+            "dnf"|"yum")
+                $MAVEN_PACKAGE_MANAGER install -y maven || { log "Error instalando Maven"; return 1; }
+                ;;
+            "zypper")
+                zypper install -y maven || { log "Error instalando Maven"; return 1; }
+                ;;
+            "pacman")
+                pacman -S --noconfirm maven || { log "Error instalando Maven"; return 1; }
+                ;;
+        esac
+        
+        # Verificar instalación
+        if ! command -v mvn >/dev/null 2>&1; then
+            log "ERROR: Maven no se instaló correctamente"
+            return 1
+        else
+            log "✓ Maven instalado exitosamente"
         fi
     fi
     
