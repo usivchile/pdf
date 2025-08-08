@@ -280,9 +280,48 @@ install_clean_tomcat() {
         return 1
     fi
     
+    # Detectar JAVA_HOME automáticamente
+    log "Detectando JAVA_HOME..."
+    JAVA_HOME_PATH=""
+    
+    # Buscar Java en ubicaciones comunes
+    JAVA_LOCATIONS=(
+        "/usr/lib/jvm/java-11-openjdk-amd64"     # Ubuntu/Debian
+        "/usr/lib/jvm/java-11-openjdk"           # CentOS/RHEL
+        "/usr/lib/jvm/java-1.11.0-openjdk"       # CentOS/RHEL alternativo
+        "/usr/lib/jvm/java-11"                   # Genérico
+        "/usr/java/latest"                       # Oracle Java
+        "/opt/java/openjdk"                      # Contenedores
+    )
+    
+    for java_path in "${JAVA_LOCATIONS[@]}"; do
+        if [[ -d "$java_path" ]] && [[ -x "$java_path/bin/java" ]]; then
+            JAVA_HOME_PATH="$java_path"
+            log "✓ JAVA_HOME detectado: $JAVA_HOME_PATH"
+            break
+        fi
+    done
+    
+    # Si no se encuentra, usar el comando java
+    if [[ -z "$JAVA_HOME_PATH" ]]; then
+        if command -v java >/dev/null 2>&1; then
+            JAVA_HOME_PATH=$(dirname $(dirname $(readlink -f $(which java))))
+            log "✓ JAVA_HOME derivado de 'which java': $JAVA_HOME_PATH"
+        else
+            log "ERROR: No se pudo detectar JAVA_HOME"
+            return 1
+        fi
+    fi
+    
+    # Verificar que JAVA_HOME es válido
+    if [[ ! -x "$JAVA_HOME_PATH/bin/java" ]]; then
+        log "ERROR: JAVA_HOME no válido: $JAVA_HOME_PATH"
+        return 1
+    fi
+    
     # Crear archivo de servicio systemd
-    log "Creando servicio systemd..."
-    cat > /etc/systemd/system/tomcat.service << 'EOF'
+    log "Creando servicio systemd con JAVA_HOME=$JAVA_HOME_PATH..."
+    cat > /etc/systemd/system/tomcat.service << EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
 After=network.target
@@ -290,7 +329,7 @@ After=network.target
 [Service]
 Type=forking
 
-Environment=JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+Environment=JAVA_HOME=$JAVA_HOME_PATH
 Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
 Environment=CATALINA_HOME=/opt/tomcat
 Environment=CATALINA_BASE=/opt/tomcat
@@ -311,10 +350,37 @@ WantedBy=multi-user.target
 EOF
     
     # Recargar systemd y habilitar servicio
-    systemctl daemon-reload
-    systemctl enable tomcat
+    log "Recargando systemd y habilitando servicio..."
+    if systemctl daemon-reload; then
+        log "✓ systemd daemon recargado"
+    else
+        log "ERROR: Error recargando systemd daemon"
+        return 1
+    fi
     
-    log "Tomcat instalado correctamente"
+    if systemctl enable tomcat; then
+        log "✓ Servicio tomcat habilitado"
+    else
+        log "ERROR: Error habilitando servicio tomcat"
+        return 1
+    fi
+    
+    # Verificar que el servicio fue creado correctamente
+    if systemctl list-unit-files | grep -q "tomcat.service"; then
+        log "✓ Servicio tomcat.service creado correctamente"
+    else
+        log "ERROR: Servicio tomcat.service no fue creado"
+        log "Verificando archivo de servicio..."
+        if [[ -f "/etc/systemd/system/tomcat.service" ]]; then
+            log "Archivo de servicio existe, contenido:"
+            cat /etc/systemd/system/tomcat.service
+        else
+            log "ERROR: Archivo de servicio no existe"
+        fi
+        return 1
+    fi
+    
+    log "✓ Tomcat instalado correctamente"
 }
 
 # Función para desplegar la aplicación
@@ -362,7 +428,25 @@ deploy_application() {
 # Función para iniciar y verificar Tomcat
 start_and_verify_tomcat() {
     log "Iniciando Tomcat..."
-    systemctl start tomcat
+    
+    # Verificar que el servicio existe antes de intentar iniciarlo
+    if ! systemctl list-unit-files | grep -q "tomcat.service"; then
+        log "ERROR: Servicio tomcat.service no encontrado"
+        log "Servicios disponibles:"
+        systemctl list-unit-files | grep -i tomcat || log "No hay servicios de tomcat"
+        return 1
+    fi
+    
+    if systemctl start tomcat; then
+        log "✓ Comando de inicio ejecutado correctamente"
+    else
+        log "ERROR: Error ejecutando comando de inicio"
+        log "Estado del servicio:"
+        systemctl status tomcat --no-pager
+        log "Logs del servicio:"
+        journalctl -u tomcat --no-pager -n 20
+        return 1
+    fi
     
     # Esperar a que Tomcat inicie
     log "Esperando a que Tomcat inicie completamente..."
@@ -373,7 +457,13 @@ start_and_verify_tomcat() {
         log "✓ Servicio Tomcat está activo"
     else
         log "✗ ERROR: Servicio Tomcat no está activo"
-        systemctl status tomcat
+        log "Estado detallado del servicio:"
+        systemctl status tomcat --no-pager
+        log "Últimos logs del servicio:"
+        journalctl -u tomcat --no-pager -n 30
+        log "Verificando JAVA_HOME y archivos:"
+        log "JAVA_HOME configurado: $(grep JAVA_HOME /etc/systemd/system/tomcat.service)"
+        log "¿Existe startup.sh?: $(ls -la /opt/tomcat/bin/startup.sh 2>/dev/null || echo 'NO EXISTE')"
         return 1
     fi
     
@@ -426,17 +516,36 @@ main() {
     echo
     echo "RESUMEN:"
     echo "- Tomcat 9 instalado en /opt/tomcat"
-    echo "- Servicio: systemctl {start|stop|restart|status} tomcat"
+    echo "- Servicio systemd: tomcat.service"
+    echo "- Comandos: systemctl {start|stop|restart|status} tomcat"
     echo "- Puerto: 8080"
     echo "- Usuario: tomcat"
     echo "- Logs: /opt/tomcat/logs/"
     echo "- Aplicación desplegada como ROOT"
     echo
-    echo "VERIFICACIONES:"
+    echo "VERIFICACIONES INMEDIATAS:"
     echo "- Estado del servicio: systemctl status tomcat"
-    echo "- Puerto: netstat -tlnp | grep 8080"
-    echo "- Logs: tail -f /opt/tomcat/logs/catalina.out"
+    echo "- ¿Servicio habilitado?: systemctl is-enabled tomcat"
+    echo "- ¿Servicio activo?: systemctl is-active tomcat"
+    echo "- Puerto en uso: netstat -tlnp | grep 8080"
+    echo "- Procesos Java: ps aux | grep java"
+    echo
+    echo "LOGS Y DIAGNÓSTICO:"
+    echo "- Logs del servicio: journalctl -u tomcat -f"
+    echo "- Logs de Tomcat: tail -f /opt/tomcat/logs/catalina.out"
+    echo "- Logs de aplicación: tail -f /opt/tomcat/logs/localhost.*.log"
+    echo "- Configuración del servicio: cat /etc/systemd/system/tomcat.service"
+    echo
+    echo "PRUEBAS DE CONECTIVIDAD:"
+    echo "- Local: curl -I http://localhost:8080/"
     echo "- Aplicación: curl http://localhost:8080/"
+    echo "- Desde exterior: curl -I http://$(hostname -I | awk '{print $1}'):8080/"
+    echo
+    echo "COMANDOS DE SOLUCIÓN DE PROBLEMAS:"
+    echo "- Reiniciar servicio: sudo systemctl restart tomcat"
+    echo "- Ver logs en tiempo real: sudo journalctl -u tomcat -f"
+    echo "- Verificar JAVA_HOME: sudo systemctl show tomcat -p Environment"
+    echo "- Verificar permisos: ls -la /opt/tomcat/bin/startup.sh"
     echo
     echo "SIGUIENTE PASO:"
     echo "Ejecutar: sudo ./check-deployment.sh"
