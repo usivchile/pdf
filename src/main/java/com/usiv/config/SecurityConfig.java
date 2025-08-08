@@ -49,16 +49,16 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
+            .authorizeRequests(auth -> auth
                 // Endpoints públicos
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/health").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/download/**").permitAll() // Descargas públicas con token en URL
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/api/health").permitAll()
+                .antMatchers("/actuator/health").permitAll()
+                .antMatchers("/download/**").permitAll() // Descargas públicas con token en URL
+                .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Endpoints protegidos
-                .requestMatchers("/api/pdf/**").authenticated()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers("/api/pdf/**").authenticated()
+                .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             );
 
